@@ -4,7 +4,7 @@ A professional-grade, all-in-one tool for real estate investors that runs entire
 
 [**Live Demo →**](https://nivas.homes/calculators/property-lens)
 
-<img src="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512' height='512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='2.75' markerHeight='2.75' orient='auto-start-reverse'%3E%3Cpath d='M 0 0 L 10 5 L 0 10 z' fill='%23F39C12'/%3E%3C/marker%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='256' fill='%232C3E50'/%3E%3Cpath d='M392 232L256 112L120 232V400H392V232Z' fill='%23FFFBEB'/%3E%3Cpath d='M120 400L224 272L288 352L378 172' stroke='%23F39C12' stroke-width='22' stroke-linecap='round' stroke-linejoin='round' marker-end='url(%23arrow)'/%3E%3C/svg%3E" alt="PropertyLens Logo" width="64">
+<img src="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='2.75' markerHeight='2.75' orient='auto-start-reverse'%3E%3Cpath d='M 0 0 L 10 5 L 0 10 z' fill='%23F39C12'/%3E%3C/marker%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='256' fill='%232C3E50'/%3E%3Cpath d='M392 232L256 112L120 232V400H392V232Z' fill='%23FFFBEB'/%3E%3Cpath d='M120 400L224 272L288 352L378 172' stroke='%23F39C12' stroke-width='22' stroke-linecap='round' stroke-linejoin='round' marker-end='url(%23arrow)'/%3E%3C/svg%3E" alt="PropertyLens Logo" width="64">
 
 ---
 
