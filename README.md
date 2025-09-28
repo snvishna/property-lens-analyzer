@@ -4,7 +4,7 @@ A professional-grade, all-in-one tool for real estate investors that runs entire
 
 [**Live Demo →**](https://nivas.homes/calculators/property-lens)
 
-<img src="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='2.75' markerHeight='2.75' orient='auto-start-reverse'%3E%3Cpath d='M 0 0 L 10 5 L 0 10 z' fill='%23F39C12'/%3E%3C/marker%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='256' fill='%232C3E50'/%3E%3Cpath d='M392 232L256 112L120 232V400H392V232Z' fill='%23FFFBEB'/%3E%3Cpath d='M120 400L224 272L288 352L378 172' stroke='%23F39C12' stroke-width='22' stroke-linecap='round' stroke-linejoin='round' marker-end='url(%23arrow)'/%3E%3C/svg%3E" alt="PropertyLens Logo" width="64">
+<img src="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='2.75' markerHeight='2.75' orient='auto-start-reverse'%3E%3Cpath d='M 0 0 L 10 5 L 0 10 z' fill='%23F39C12'/%3E%3C/marker%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='256' fill='%232C3E50'/%3E%3Cpath d='M392 232L256 112L120 232V400H392V232Z' fill='%23FFFBEB'/%3E%3Cpath d='M120 400L224 272L288 352L378 172' stroke='%23F39C12' stroke-width='22' stroke-linecap='round' stroke-linejoin='round' marker-end='url(%23arrow)'/%3E%3C/svg%3E" alt="PropertyLens Logo" width="128">
 
 ---
 
@@ -23,22 +23,24 @@ In the world of real estate investing, most analysis tools fall into two categor
 PropertyLens is packed with features designed to provide deep, actionable insights.
 
 -   **🔒 100% Private & Secure:** All calculations happen in your browser. Your financial data is never sent over the internet. Your deals stay your deals.
--   ** portability 🚚 Single-File Portability:** The entire app is a single `.html` file. Save it, email it to a partner, run it on a laptop with no internet. It just works.
+-   **🚚 Single-File Portability:** The entire app is a single `.html` file. Save it, email it to a partner, run it on a laptop with no internet. It just works.
 -   **📊 Intuitive "Storytelling" UI:** The output isn't just a data dump; it's a story. Cards are arranged to follow an investor's natural thought process: from the high-level **Verdict**, to year-one **Key Metrics**, to the **Debt Structure**, long-term **Wealth Projections**, and finally the **Exit Analysis**.
 -   **💸 Comprehensive Tax Analysis:** This is not a simple pre-tax calculator. The engine models your specific tax situation to reveal the true, after-tax returns.
     -   Calculates **After-Tax Cash Flow** by factoring in the powerful "tax shield" from depreciation and mortgage interest deductions.
     -   Models both **Marginal Income Tax** and **Capital Gains Tax**.
     -   Includes standard **27.5-Year Residential Depreciation**.
--   **📈 NEW! Debt & Amortization Analysis:** A brand-new chart that visualizes your loan structure over time.
-    -   For **Fixed/ARM loans**, it shows a stacked graph of your remaining Principal vs. cumulative Interest Paid. It also automatically pinpoints the "Crossover Point" where your principal payments start exceeding interest.
+-   **📈 Debt & Amortization Analysis:** A brand-new chart that visualizes your loan structure over time.
+    -   For **Fixed/ARM loans**, it shows a stacked graph of your remaining Principal vs. cumulative Interest Paid. It also automatically pinpoints the "Crossover Point."
     -   For **Margin loans**, it dynamically adapts to show the projected loan balance over your hold period.
--   **🏠 Flexible Expense Modeling (Bug Fixed!):** Every property is different. The tool allows you to model expenses in two ways, and the calculation engine now correctly deducts itemized expenses to accurately model value-add strategies.
+-   **🏠 Flexible Expense Modeling:** Every property is different. The tool allows you to model expenses in two ways.
     -   **Percentage-Based:** A quick way to budget for CapEx and repairs as a percentage of income.
     -   **Itemized CapEx:** For a more precise forecast, you can itemize large capital expenditures (e.g., "New Roof - $15,000 - Year 5").
+-   **🔗 One-Click Scenario Sharing:** The entire state of your analysis is compressed and stored directly in the URL. Simply copy the link from your address bar and share it with a partner, client, or colleague to give them a fully interactive, pre-filled version of your analysis.
 -   **🗂️ Advanced Scenario Management & Multi-Export:** The heart of a powerful analysis workflow.
     -   **Save & Name Scenarios:** Save your current analysis with a descriptive name (e.g., "123 Main St - Conservative Case").
     -   **Load & Delete:** Easily manage and load your saved scenarios.
     -   **Multi-Scenario XLSX Export:** Select multiple saved scenarios and export them to a single, professionally formatted multi-tab Excel file.
+-   **📱 Fully Responsive Design:** The interface is optimized for all screen sizes, from mobile phones to desktop monitors, for a seamless experience on any device.
 -   **💡 In-Depth Tooltips & Metric Breakdowns**: Every metric includes a detailed tooltip explaining the formula, what it means, and crucially, *how to interpret it* with common benchmarks.
 
 ---
@@ -50,6 +52,8 @@ It's as simple as it gets.
 2.  Open it in your web browser.
 
 That's it. You're ready to start analyzing deals.
+
+**Browser Compatibility:** PropertyLens is supported on the latest versions of modern evergreen browsers like Chrome, Firefox, Safari, and Edge.
 
 ---
 
@@ -164,6 +168,12 @@ Here are some features on the current roadmap that would make great contribution
 -   **1031 Exchange Modeling:** Add a toggle in the "Sale Analysis" section to simulate a 1031 exchange, deferring capital gains and depreciation recapture taxes.
 -   **Refinance Modeling:** Allow the user to input a "Refinance Event" with a specific year, new loan amount, and terms to model the BRRRR strategy more accurately.
 -   **Partnership & Waterfall Calculations:** Add an input section to model deals with multiple partners, including capital contributions and profit-sharing structures.
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**. You are free to use, modify, and distribute this software for personal or commercial use.
 
 ---
 
