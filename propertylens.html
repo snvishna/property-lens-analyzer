@@ -617,9 +617,12 @@
             </div>
             <div class="mt-6 flex flex-col sm:flex-row justify-between items-center border-t pt-4 gap-4 border-slate-200">
                 <div class="text-sm text-slate-600 text-center sm:text-left">
-                    <span class="font-semibold">Backup:</span>
-                    <button id="importScenariosBtn" class="text-blue-600 hover:underline font-medium">Import Snapshot (CSV)</button> |
-                    <button id="exportScenariosCsvBtn" class="text-blue-600 hover:underline font-medium">Export Snapshot (CSV)</button>
+                    <span class="tooltip-container" data-tooltip="This feature allows you to save a complete backup of all your scenarios to a single CSV file. You can use this file to transfer your scenarios to another computer or to restore them if your browser data is cleared.">
+                        <span class="font-semibold">Backup</span>
+                        <span class="help-icon">?</span>:
+                        <button id="importScenariosBtn" class="text-blue-600 hover:underline font-medium">Import Scenarios (CSV)</button> |
+                        <button id="exportScenariosCsvBtn" class="text-blue-600 hover:underline font-medium">Export All Scenarios (CSV)</button>
+                    </span>
                 </div>
                 <div class="flex-shrink-0 w-full sm:w-auto">
                     <button id="exportSelectedXlsxBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-5 rounded-lg text-sm transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed">
@@ -1217,7 +1220,107 @@
                     const totalReturned = cashflows.filter(cf => cf > 0).reduce((sum, cf) => sum + cf, 0);
                     if (totalInvested === 0) return Infinity;
                     return totalReturned / Math.abs(totalInvested);
-                }
+                },
+
+                calculateMonthlyProjections(state, initialResults) {
+                    const projections = [];
+                    const monthlyIncomeGrowth = Math.pow(1 + state.annualIncomeGrowth / 100, 1 / 12) - 1;
+                    const monthlyExpenseGrowth = Math.pow(1 + state.annualExpenseGrowth / 100, 1 / 12) - 1;
+                    const monthlyValueGrowth = Math.pow(1 + state.annualValueGrowth / 100, 1 / 12) - 1;
+                    const depreciableBasis = state.purchasePrice * (1 - state.landValuePct / 100);
+                    const monthlyDepreciation = depreciableBasis / (27.5 * 12);
+
+                    let current = {
+                        loanBalance: initialResults.shared.loanAmount,
+                        propertyValue: state.purchasePrice,
+                        grossMonthlyRent: state.grossMonthlyRent,
+                        otherIncome: state.otherIncome,
+                        propTaxes: state.propTaxes,
+                        insurance: state.insurance,
+                        hoa: state.hoa,
+                        otherExpenses: state.otherExpenses,
+                        cumulativeAfterTaxCF: 0,
+                        totalCapitalInvested: initialResults.shared.totalCashNeeded
+                    };
+                    
+                    const armAdjustmentMonth = (state.loanType === 'arm10' ? 10 : 7) * 12;
+
+                    for (let month = 1; month <= 360; month++) {
+                        const p = {};
+                        const beginningEquity = current.propertyValue - current.loanBalance;
+
+                        // I. Income
+                        p.grossScheduledRent = current.grossMonthlyRent;
+                        p.otherIncome = current.otherIncome;
+                        p.grossPotentialIncome = p.grossScheduledRent + p.otherIncome;
+                        p.vacancyLoss = p.grossPotentialIncome * (state.vacancyPct / 100);
+                        p.effectiveGrossIncome = p.grossPotentialIncome - p.vacancyLoss;
+
+                        // II. Operating Expenses
+                        p.propTaxes = current.propTaxes;
+                        p.insurance = current.insurance;
+                        p.hoa = current.hoa;
+                        p.otherFixedExpenses = current.otherExpenses;
+                        p.repairs = p.grossPotentialIncome * (state.maintenancePct / 100);
+                        p.management = p.grossPotentialIncome * (state.managementPct / 100);
+                        p.totalOpEx = p.propTaxes + p.insurance + p.hoa + p.otherFixedExpenses + p.repairs + p.management;
+                        
+                        // III. Profitability & Debt Service
+                        p.noi = p.effectiveGrossIncome - p.totalOpEx;
+                        let monthlyInterestRate;
+                        if (state.loanType.startsWith('arm')) {
+                            const rate = month > armAdjustmentMonth ? state.adjustedInterestRate : state.initialInterestRate;
+                            monthlyInterestRate = (rate / 100) / 12;
+                        } else {
+                            monthlyInterestRate = (state.interestRate / 100) / 12;
+                        }
+                        const remainingTerm = (state.loanTerm * 12) - (month - 1);
+                        p.debtService = this.calculatePi(current.loanBalance, monthlyInterestRate, remainingTerm);
+                        p.interestPayment = current.loanBalance * monthlyInterestRate;
+                        p.principalPayment = p.debtService - p.interestPayment;
+                        const yearOfMonth = Math.ceil(month / 12);
+                        const itemizedCapExForYear = state.useItemizedCapEx ? (state.itemizedCapEx.filter(item => parseInt(item.year) === yearOfMonth).reduce((sum, item) => sum + item.cost, 0)) : 0;
+                        const capExReserve = state.useItemizedCapEx ? 0 : p.grossPotentialIncome * (state.capExPct / 100);
+                        p.capEx = capExReserve + (itemizedCapExForYear / 12);
+                        p.cashFlowBeforeTax = p.noi - p.debtService - p.capEx;
+
+                        // IV. After-Tax Analysis
+                        p.depreciation = monthlyDepreciation;
+                        p.taxableIncome = p.noi - p.interestPayment - p.depreciation;
+                        p.taxImpact = p.taxableIncome * (state.marginalTaxRate / 100);
+                        p.cashFlowAfterTax = p.cashFlowBeforeTax - p.taxImpact;
+
+                        // V. Balance Sheet & Equity
+                        p.beginningLoanBalance = current.loanBalance;
+                        current.loanBalance -= p.principalPayment;
+                        if (current.loanBalance < 0) current.loanBalance = 0;
+                        p.endingLoanBalance = current.loanBalance;
+                        p.propertyValue = current.propertyValue;
+                        p.totalEquity = p.propertyValue - p.endingLoanBalance;
+
+                        // VI. KPIs & Cumulative
+                        current.cumulativeAfterTaxCF += p.cashFlowAfterTax;
+                        p.cumulativeAfterTaxCF = current.cumulativeAfterTaxCF;
+                        if (p.cashFlowAfterTax < 0) {
+                            current.totalCapitalInvested -= p.cashFlowAfterTax;
+                        }
+                        p.totalCapitalInvested = current.totalCapitalInvested;
+                        p.dscr = p.debtService > 0 ? p.noi / p.debtService : Infinity;
+                        p.roe = beginningEquity > 0 ? (p.cashFlowAfterTax * 12) / beginningEquity : Infinity;
+
+                        projections.push(p);
+
+                        // Increment values for the next month
+                        current.propertyValue *= (1 + monthlyValueGrowth);
+                        current.grossMonthlyRent *= (1 + monthlyIncomeGrowth);
+                        current.otherIncome *= (1 + monthlyIncomeGrowth);
+                        current.propTaxes *= (1 + monthlyExpenseGrowth);
+                        current.insurance *= (1 + monthlyExpenseGrowth);
+                        current.hoa *= (1 + monthlyExpenseGrowth);
+                        current.otherExpenses *= (1 + monthlyExpenseGrowth);
+                    }
+                    return projections;
+                },
             },
 
             ui: {
@@ -2826,24 +2929,28 @@
 
                 scenarios.forEach(scenario => {
                     const results = App.calculator.run(scenario.data);
-                    const { sheetData, merges } = this._buildWorksheetData(scenario, results);
+                    const sanitizedName = scenario.name.replace(/[\\/*?\[\]]/g, '').substring(0, 31);
+                    
+                    const { sheetData, merges, columnWidths } = this._buildWorksheetData(scenario, results);
                     
                     const ws = {};
                     let maxCols = 0;
-                    sheetData.forEach((row, r) => {
-                        if (row.length > maxCols) maxCols = row.length;
-                        row.forEach((cell, c) => {
+                    sheetData.forEach((rData, r) => {
+                        if (rData.length > maxCols) maxCols = rData.length;
+                        rData.forEach((cell, c) => {
+                            if (cell === null || cell === undefined) return;
                             const cellRef = XLSX.utils.encode_cell({ r, c });
                             ws[cellRef] = cell;
                         });
                     });
+                    
                     const range = { s: { c: 0, r: 0 }, e: { c: maxCols - 1, r: sheetData.length - 1 } };
                     ws['!ref'] = XLSX.utils.encode_range(range);
-                    
-                    ws['!merges'] = merges;
-                    ws['!cols'] = [ {wch:28}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18} ];
 
-                    const sanitizedName = scenario.name.replace(/[\\/*?\[\]]/g, '').substring(0, 31);
+                    ws['!merges'] = merges;
+                    ws['!cols'] = columnWidths;
+                    ws['!freeze'] = { xSplit: "1", ySplit: "3", topLeftCell: "B4", activePane: "bottomRight" };
+
                     XLSX.utils.book_append_sheet(wb, ws, sanitizedName);
                 });
                 
@@ -2852,123 +2959,178 @@
             },
 
             _buildWorksheetData(scenario, results) {
-                const { state } = results;
-                let data = [];
-                let merges = [];
+                const { state, shared, projections } = results;
+                const finalYear = projections.length > 0 ? projections[projections.length - 1] : {};
                 const S = XlsxStyler;
+                let data = [], merges = [], row = 0;
 
-                const addRow = (rowData) => data.push(rowData);
-                const addTitle = (title, cols) => {
-                    merges.push({ s: { r: data.length, c: 0 }, e: { r: data.length, c: cols - 1 } });
-                    addRow([S.cell(title, ['header1'])]);
-                };
-                const addSection = (title, cols) => {
-                    addRow([]);
-                    merges.push({ s: { r: data.length, c: 0 }, e: { r: data.length, c: cols - 1 } });
-                    addRow([S.cell(title, ['header2'])]);
-                };
-
-                addTitle(`Analysis for: ${scenario.name}`, 3);
-                addSection('Summary & Key Metrics', 3);
-                addRow([S.cell('Metric', ['bold']), S.cell('Year 1', ['bold']), S.cell(`Hold Period (Avg. ${state.holdPeriod} yrs)`, ['bold'])]);
+                const addRow = (rowData) => { data.push(rowData); row++; };
+                const skipRow = (count = 1) => { for(let i=0; i<count; i++) { data.push([]); row++; }};
                 
-                const avgAnnReturn = results.shared.longTermReturn;
-                const y1_atcf = results.projections[0].afterTax.cashFlow;
-                const total_atcf = results.projections[results.projections.length - 1].afterTax.cumulativeCashFlow;
+                // --- SECTION 1: TITLE & EXECUTIVE SUMMARY ---
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 8 } });
+                addRow([S.cell(`Analysis Report: ${scenario.name}`, ['header1'])]);
+                skipRow();
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 8 } });
+                addRow([S.cell('Executive Summary: Investment Showdown', ['header2'])]);
 
-                addRow([S.cell('After-Tax Cash Flow'), S.cell(y1_atcf, ['currency']), S.cell(total_atcf / state.holdPeriod, ['currency'])]);
-                addRow([S.cell('After-Tax CoC ROI'), S.cell(results.metrics.afterTax.cocRoi, ['percent']), S.cell(avgAnnReturn, ['percent'])]);
-                addRow([S.cell('Cap Rate'), S.cell(results.shared.capRate, ['percent'])]);
-                addRow([S.cell('DSCR'), S.cell(results.shared.dscr, ['number2dec'])]);
-                addRow([S.cell('Total ROI (Annualized)'), S.cell(''), S.cell(avgAnnReturn, ['percent'])]);
-                addRow([]);
-                addRow([S.cell('Sale Summary', ['bold'])]);
-                
-                const finalYear = results.projections[results.projections.length-1];
-                addRow([S.cell('Projected Sale Price'), S.cell(finalYear.propertyValue, ['currency'])]);
-                addRow([S.cell('Profit on Sale (Pre-Tax)'), S.cell(finalYear.preTax.profitIfSold, ['currency'])]);
-                addRow([S.cell('Net Cash in Pocket (After-Tax)'), S.cell(finalYear.afterTax.profitIfSold, ['currency', 'bold'])]);
+                const sp500Results = App.calculator.calculateSp500EquivalentReturn(state.holdPeriod, shared.totalCashNeeded, state.capitalGainsTaxRate, state.sp500Return);
+                const totalDepreciation = (finalYear.year || 0) * (state.purchasePrice * (1 - state.landValuePct / 100) / 27.5);
+                const saleProceeds = (finalYear.propertyValue || 0) - ((finalYear.propertyValue || 0) * state.salesExpensesPct / 100) - (finalYear.loanBalance || 0);
+                const capitalGain = (finalYear.propertyValue || 0) - ((finalYear.propertyValue || 0) * state.salesExpensesPct / 100) - state.purchasePrice;
+                const depreciationRecapture = Math.min(Math.max(0, capitalGain), totalDepreciation);
+                const appreciationGain = capitalGain - depreciationRecapture;
+                const taxOnSale = (depreciationRecapture * state.marginalTaxRate/100) + (appreciationGain > 0 ? appreciationGain * state.capitalGainsTaxRate/100 : 0);
+                const finalCashflow = (projections[projections.length-1]?.afterTax.cashFlow || 0) + saleProceeds - taxOnSale;
+                const propertyCashFlows = [-shared.totalCashNeeded, ...projections.slice(0, -1).map(p => p.afterTax.cashFlow), finalCashflow];
+                const propertyIRR = App.calculator.calculateIRR(propertyCashFlows) || 0;
+                const sp500CashFlows = [-shared.totalCashNeeded, ...Array(state.holdPeriod - 1).fill(0), sp500Results.finalValue];
+                const sp500IRR = App.calculator.calculateIRR(sp500CashFlows) || 0;
 
-                addSection('Assumptions & Inputs', 2);
+                addRow([S.cell('Metric', ['bold']), S.cell('This Property', ['bold', 'right']), S.cell('S&P 500', ['bold', 'right'])]);
+                addRow([S.cell('IRR (Internal Rate of Return)'), S.cell(propertyIRR, ['percent']), S.cell(sp500IRR, ['percent'])]);
+                addRow([S.cell('Total After-Tax Profit'), S.cell(finalYear.afterTax?.profitIfSold || 0, ['currency']), S.cell(sp500Results.totalProfit, ['currency'])]);
+                addRow([S.cell('MoIC (Multiple on Invested Capital)'), S.cell(App.calculator.calculateMoIC(propertyCashFlows), ['number2dec']), S.cell(App.calculator.calculateMoIC(sp500CashFlows), ['number2dec'])]);
+                skipRow(2);
+
+                // --- SECTION 2: ASSUMPTIONS & DETAILED SALE ANALYSIS ---
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 3 } });
+                merges.push({ s: { r: row, c: 5 }, e: { r: row, c: 8 } });
+                addRow([S.cell('Inputs & Assumptions', ['header2']), , , , , S.cell(`Sale Analysis (End of Year ${state.holdPeriod})`, ['header2'])]);
+
                 const inputs = [
-                    {g:'Purchase', d:{'Purchase Price': S.cell(state.purchasePrice, ['currency']), 'Rehab Costs': S.cell(state.rehabCosts, ['currency']), 'Closing Costs': S.cell(state.closingCosts, ['currency']), 'After Repair Value (ARV)': S.cell(state.arv, ['currency'])}},
-                    {g:'Loan', d:{'Loan Type':S.cell(state.loanType), 'Down Payment':S.cell(state.downPayment/100, ['percent']), 'Interest Rate':S.cell(state.interestRate/100, ['percent']), 'Loan Term (Years)':S.cell(state.loanTerm, ['number'])}},
-                    {g:'Income', d:{'Gross Monthly Rent':S.cell(state.grossMonthlyRent, ['currency']), 'Other Monthly Income':S.cell(state.otherIncome, ['currency']), 'Annual Income Growth':S.cell(state.annualIncomeGrowth/100, ['percent'])}},
-                    {g:'Expenses', d:{'Property Taxes ($/mo)':S.cell(state.propTaxes, ['currency']), 'Insurance ($/mo)':S.cell(state.insurance, ['currency']), 'HOA ($/mo)':S.cell(state.hoa, ['currency']), 'Vacancy':S.cell(state.vacancyPct/100, ['percent']), 'Repairs & Maint.':S.cell(state.maintenancePct/100, ['percent']), 'Property Management':S.cell(state.managementPct/100, ['percent']), 'Capital Expenditures':S.cell(state.capExPct/100, ['percent']), 'Annual Expense Growth':S.cell(state.annualExpenseGrowth/100, ['percent'])}},
-                    {g:'Tax & Projections', d:{'Marginal Tax Rate':S.cell(state.marginalTaxRate/100, ['percent']), 'Capital Gains Rate':S.cell(state.capitalGainsTaxRate/100, ['percent']),'Land Value %':S.cell(state.landValuePct/100, ['percent']), 'Selling Costs':S.cell(state.salesExpensesPct/100, ['percent']), 'Hold Period (Years)':S.cell(state.holdPeriod, ['number']), 'Annual Value Growth':S.cell(state.annualValueGrowth/100, ['percent']), 'S&P 500 Expected Return': S.cell(state.sp500Return/100, ['percent'])}},
+                    ['Purchase Price', S.cell(state.purchasePrice, ['currency'])], ['Down Payment', S.cell(state.downPayment / 100, ['percent'])],
+                    ['Rehab Costs', S.cell(state.rehabCosts, ['currency'])], ['Interest Rate', S.cell(state.interestRate / 100, ['percent'])],
+                    ['Closing Costs', S.cell(state.closingCosts, ['currency'])], ['Loan Term', S.cell(state.loanTerm, ['number'])],
+                    ['Gross Monthly Rent', S.cell(state.grossMonthlyRent, ['currency'])], ['Value Growth %', S.cell(state.annualValueGrowth / 100, ['percent'])],
+                    ['Vacancy %', S.cell(state.vacancyPct / 100, ['percent'])], ['Income Growth %', S.cell(state.annualIncomeGrowth / 100, ['percent'])],
+                    ['Repairs %', S.cell(state.maintenancePct / 100, ['percent'])], ['Expense Growth %', S.cell(state.annualExpenseGrowth / 100, ['percent'])],
+                    ['Marginal Tax Rate %', S.cell(state.marginalTaxRate / 100, ['percent'])], ['Selling Costs %', S.cell(state.salesExpensesPct / 100, ['percent'])],
+                    ['Capital Gains Rate %', S.cell(state.capitalGainsTaxRate / 100, ['percent'])], ['Land Value %', S.cell(state.landValuePct / 100, ['percent'])],
                 ];
-                inputs.forEach(group => {
-                    merges.push({ s: { r: data.length, c: 0 }, e: { r: data.length, c: 1 } });
-                    addRow([S.cell(group.g, ['bold'])]);
-                    Object.entries(group.d).forEach(([key, val]) => addRow([S.cell(key), val]));
-                });
 
-                if (state.useItemizedCapEx && state.itemizedCapEx.length > 0) {
-                    merges.push({ s: { r: data.length, c: 0 }, e: { r: data.length, c: 2 } });
-                    addRow([S.cell('Itemized Capital Expenditures', ['bold'])]);
-                    addRow([S.cell('Description'), S.cell('Cost', ['right', 'bold']), S.cell('Year', ['right', 'bold'])]);
-                    state.itemizedCapEx.forEach(item => {
-                        addRow([S.cell(item.desc), S.cell(item.cost, ['currency']), S.cell(item.year, ['number'])]);
-                    });
-                }
-                
-                const projCols = 13;
-                addSection('Annual Projections', projCols);
-                const projHeaders = ['Year', 'Property Value', 'Equity', 'Loan Balance', 'NOI', 'Pre-Tax CF', 'Depreciation', 'Taxable Income', 'Tax Impact', 'After-Tax CF', 'CoC ROI', 'ROE', 'Total ROI (Ann.)'];
-                addRow(projHeaders.map(h => S.cell(h, ['bold', 'right'])));
-                results.projections.forEach(p => {
+                const saleAnalysis = [
+                    ['Future Sale Price', S.cell(finalYear.propertyValue || 0, ['currency'])],
+                    ['Less: Selling Costs', S.cell(-((finalYear.propertyValue || 0) * state.salesExpensesPct / 100), ['currency', 'redFont'])],
+                    ['Less: Loan Payoff', S.cell(-(finalYear.loanBalance || 0), ['currency', 'redFont'])],
+                    ['Less: Tax on Sale', S.cell(-taxOnSale, ['currency', 'redFont'])],
+                    ['  Depreciation Recapture Tax', S.cell(-(depreciationRecapture * state.marginalTaxRate/100), ['currency', 'redFont'])],
+                    ['  Capital Gains Tax', S.cell(-(appreciationGain > 0 ? appreciationGain * state.capitalGainsTaxRate/100 : 0), ['currency', 'redFont'])],
+                    [],
+                    ['Net Cash From Sale', S.cell(saleProceeds - taxOnSale, ['currency', 'bold'])],
+                    ['+ Cumulative After-Tax CF', S.cell(finalYear.afterTax?.cumulativeCashFlow || 0, ['currency'])],
+                    ['- Total Capital Invested', S.cell(-shared.totalCashNeeded, ['currency', 'redFont'])],
+                    [],
+                    ['Total Net Profit', S.cell(finalYear.afterTax?.profitIfSold || 0, ['currency', 'bold'])],
+                ];
+
+                for (let i = 0; i < Math.max(Math.ceil(inputs.length / 2), saleAnalysis.length); i++) {
+                    const i1 = i * 2;
+                    const i2 = i1 + 1;
+                    const saleRow = saleAnalysis[i] || [];
                     addRow([
-                        S.cell(p.year, ['number']), 
-                        S.cell(p.propertyValue, ['currency']), 
-                        S.cell(p.equity, ['currency']), 
-                        S.cell(p.loanBalance, ['currency']),
-                        S.cell(p.annualNOI, ['currency']), 
-                        S.cell(p.preTax.cashFlow, ['currency']), 
-                        S.cell(p.annualDepreciation, ['currency']),
-                        S.cell((p.annualNOI - p.annualInterestPaid - p.annualDepreciation), ['currency']), 
-                        S.cell(p.taxImpact, ['currency']), 
-                        S.cell(p.afterTax.cashFlow, ['currency', 'bold']),
-                        S.cell(results.shared.totalCashNeeded > 0 ? (p.afterTax.cashFlow / results.shared.totalCashNeeded) : 0, ['percent']),
-                        S.cell(p.afterTax.roe, ['percent']), 
-                        S.cell(p.afterTax.annualizedReturn, ['percent', 'bold'])
+                        S.cell(inputs[i1]?.[0]), inputs[i1]?.[1], S.cell(inputs[i2]?.[0]), inputs[i2]?.[1],
+                        , // Spacer column
+                        S.cell(saleRow[0]), , S.cell(saleRow[1])
+                    ]);
+                    merges.push({ s: { r: row - 1, c: 6 }, e: { r: row - 1, c: 7 } });
+                }
+                skipRow(2);
+                
+                // --- SECTION 3: ANNUAL PROJECTIONS ---
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 12 } });
+                addRow([S.cell('Annual Projections', ['header2'])]);
+                const projHeaders = ['Year', 'Value', 'Equity', 'Loan Balance', 'NOI', 'Pre-Tax CF', 'Depreciation', 'Tax Impact', 'After-Tax CF', 'Cumulative CF', 'ROE', 'Total ROI (Ann.)'];
+                addRow(projHeaders.map(h => S.cell(h, ['bold', 'right'])));
+                projections.forEach(p => {
+                    const isNegativeCF = p.afterTax.cashFlow < 0;
+                    addRow([
+                        S.cell(p.year, ['number']), S.cell(p.propertyValue, ['currency']), S.cell(p.equity, ['currency']), S.cell(p.loanBalance, ['currency']),
+                        S.cell(p.annualNOI, ['currency']), S.cell(p.preTax.cashFlow, ['currency']), S.cell(p.annualDepreciation, ['currency']), S.cell(p.taxImpact, p.taxImpact > 0 ? ['currency', 'redFont'] : ['currency']),
+                        S.cell(p.afterTax.cashFlow, isNegativeCF ? ['currency', 'bold', 'redFont'] : ['currency', 'bold']), S.cell(p.afterTax.cumulativeCashFlow, ['currency']),
+                        S.cell(p.afterTax.roe, ['percent']), S.cell(p.afterTax.annualizedReturn, ['percent', 'bold'])
                     ]);
                 });
+                skipRow(2);
 
-                addSection('Sale Analysis Breakdown (End of Year ' + state.holdPeriod + ')', 2);
-                 const saleCosts = finalYear.propertyValue * (state.salesExpensesPct / 100);
-                 const preTaxProfitOnSale = finalYear.propertyValue - saleCosts - finalYear.loanBalance;
-                 const totalGain = finalYear.propertyValue - saleCosts - state.purchasePrice;
-                 const depreciationRecapture = finalYear.year * (state.purchasePrice * (1 - state.landValuePct / 100) / 27.5); // FIX: Use landValuePct for XLSX export
-                 const taxOnSale = (depreciationRecapture * (state.marginalTaxRate/100)) + (Math.max(0, totalGain - depreciationRecapture) * (state.capitalGainsTaxRate/100));
-
-                const sale = [
-                    ['Projected Sale Price', S.cell(finalYear.propertyValue, ['currency'])],
-                    [`Less: Selling Costs (${state.salesExpensesPct}%)`, S.cell(-saleCosts, ['currency'])],
-                    ['Less: Loan Payoff', S.cell(-finalYear.loanBalance, ['currency'])],
-                    [S.cell('Profit on Sale (Pre-Tax)', ['bold']), S.cell(preTaxProfitOnSale, ['currency', 'bold'])],
-                    [],
-                    ['Total Capital Gains', S.cell(totalGain, ['currency'])],
-                    ['Cumulative Depreciation Recapture', S.cell(depreciationRecapture, ['currency'])],
-                    ['Tax on Sale', S.cell(-taxOnSale, ['currency'])],
-                    [],
-                    [S.cell('Net Cash in Pocket (After-Tax)', ['bold']), S.cell(finalYear.afterTax.profitIfSold + results.shared.totalCashNeeded, ['currency', 'bold'])]
-                ];
-                sale.forEach(row => addRow(row));
-
-                if (results.amortizationSchedule && results.amortizationSchedule.length > 0) {
-                    addSection('Loan Amortization Schedule', 4);
-                    addRow(['Payment #', 'Principal', 'Interest', 'Ending Balance'].map(h => S.cell(h, ['bold', 'right'])));
-                    results.amortizationSchedule.forEach(p => {
-                        addRow([
-                            S.cell(p.month, ['number']),
-                            S.cell(p.principal, ['currencyCents']),
-                            S.cell(p.interest, ['currencyCents']),
-                            S.cell(p.endingBalance, ['currencyCents']),
-                        ]);
-                    });
-                }
+                // --- SECTION 4: DETAILED MONTHLY CASH FLOW ---
+                const monthlyProjections = App.calculator.calculateMonthlyProjections(state, results);
+                const maxMonthsToShow = Math.min(360, state.holdPeriod * 12);
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: maxMonthsToShow + 1 } });
+                addRow([S.cell('Detailed Monthly Cash Flow (Hold Period)', ['header2'])]);
                 
-                return { sheetData: data, merges };
+                const monthlyHeaders = ["Metric"];
+                for (let i = 1; i <= maxMonthsToShow; i++) { monthlyHeaders.push(`M${i}`); }
+                data.push(monthlyHeaders.map(h => S.cell(h, ['bold', 'right']))); row++;
+                
+                const metricRows = [
+                    "INCOME",
+                    { label: "Gross Scheduled Rent", key: "grossScheduledRent", style: ["currency"] },
+                    { label: "Other Income", key: "otherIncome", style: ["currency"] },
+                    { label: "Less: Vacancy Loss", key: "vacancyLoss", style: ["currency", "redFont"] },
+                    { label: "Effective Gross Income", key: "effectiveGrossIncome", style: ["currency", "bold"] },
+                    "OPERATING EXPENSES",
+                    { label: "Property Taxes", key: "propTaxes", style: ["currency"] },
+                    { label: "Insurance", key: "insurance", style: ["currency"] },
+                    { label: "Repairs & Maintenance", key: "repairs", style: ["currency"] },
+                    { label: "Property Management", key: "management", style: ["currency"] },
+                    { label: "HOA Fees", key: "hoa", style: ["currency"] },
+                    { label: "Other Expenses", key: "otherFixedExpenses", style: ["currency"] },
+                    { label: "Total Operating Expenses", key: "totalOpEx", style: ["currency", "bold", "redFont"] },
+                    "PROFITABILITY & DEBT",
+                    { label: "Net Operating Income (NOI)", key: "noi", style: ["currency", "bold"] },
+                    { label: "Less: Debt Service (P&I)", key: "debtService", style: ["currency", "redFont"] },
+                    { label: "Less: Capital Expenditures", key: "capEx", style: ["currency", "redFont"] },
+                    { label: "Cash Flow Before Tax", key: "cashFlowBeforeTax", style: ["currency", "bold"] },
+                    "AFTER-TAX ANALYSIS",
+                    { label: "Less: Tax Impact / (Shield)", key: "taxImpact", style: ["currency", "redFont"] },
+                    { label: "Cash Flow After Tax", key: "cashFlowAfterTax", style: ["currency", "bold"] },
+                    "BALANCE SHEET",
+                    { label: "Property Value", key: "propertyValue", style: ["currency"] },
+                    { label: "Ending Loan Balance", key: "endingLoanBalance", style: ["currency"] },
+                    { label: "Total Equity", key: "totalEquity", style: ["currency", "bold"] },
+                    "KPIS & CUMULATIVE",
+                    { label: "Cumulative After-Tax CF", key: "cumulativeAfterTaxCF", style: ["currency", "bold"] },
+                    { label: "Debt Service Coverage Ratio (DSCR)", key: "dscr", style: ["number2dec"] },
+                    { label: "Return on Equity (ROE %)", key: "roe", style: ["percent"] },
+                ];
+
+                metricRows.forEach(metric => {
+                    if (typeof metric === 'string') {
+                        const headerRow = [S.cell(metric, ['bold'])];
+                        merges.push({ s: { r: row, c: 0 }, e: { r: row, c: maxMonthsToShow + 1 } });
+                        data.push(headerRow); row++;
+                        return;
+                    }
+                    
+                    const rowData = [S.cell(`  ${metric.label}`)];
+                    for (let i = 0; i < maxMonthsToShow; i++) {
+                        const val = monthlyProjections[i][metric.key];
+                        if (!isFinite(val)) {
+                            rowData.push(S.cell('N/A', ['right']));
+                            continue;
+                        }
+                        const isNegative = val < 0;
+                        let finalStyle = metric.style;
+                        if (isNegative && (metric.style.includes('currency') || metric.style.includes('currencyCents'))) {
+                            finalStyle = [...metric.style, 'redFont'];
+                        }
+                        rowData.push(S.cell(val, finalStyle));
+                    }
+                    data.push(rowData); row++;
+                });
+                skipRow(2);
+
+                // --- SECTION 5: LOAN AMORTIZATION SCHEDULE ---
+                merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 4 } });
+                addRow([S.cell('Loan Amortization Schedule', ['header2'])]);
+                addRow(['Payment #', 'Principal', 'Interest', 'Ending Balance'].map(h => S.cell(h, ['bold', 'right'])));
+                results.amortizationSchedule.slice(0, maxMonthsToShow).forEach(p => {
+                    addRow([ S.cell(p.month, ['number']), S.cell(p.principal, ['currencyCents']), S.cell(p.interest, ['currencyCents']), S.cell(p.endingBalance, ['currencyCents']) ]);
+                });
+
+                const columnWidths = [ {wch:28}, {wch:15}, {wch:28}, {wch:15}, {wch:5}, {wch:25}, {wch:15}, {wch:15}, {wch:15} ];
+                return { sheetData: data, merges, columnWidths };
             }
         };
 
