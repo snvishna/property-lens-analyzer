@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PropertyLens: The Professional Real Estate Investment Analyzer</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M448 340.062V448H64V128H171.938' stroke='%232D3748' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M304 160l-64 64-64-64-96 96' stroke='%232D3748' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M448 160H304V16' stroke='%232D3748' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='2.75' markerHeight='2.75' orient='auto-start-reverse'%3E%3Cpath d='M 0 0 L 10 5 L 0 10 z' fill='%23F39C12'/%3E%3C/marker%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='256' fill='%232C3E50'/%3E%3Cpath d='M392 232L256 112L120 232V400H392V232Z' fill='%23FFFBEB'/%3E%3Cpath d='M120 400L224 272L288 352L378 172' stroke='%23F39C12' stroke-width='22' stroke-linecap='round' stroke-linejoin='round' marker-end='url(%23arrow)'/%3E%3C/svg%3E">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "462934927f434e80833b3a19986150aa"}'></script>
@@ -439,7 +439,15 @@
                                     <span></span>
                                 </div>
                             </div>
-                             <div class="input-group md:col-span-2">
+                            <div class="input-group">
+                                <label for="landValuePct" class="block text-sm font-medium text-slate-700"><span class="tooltip-container" data-tooltip="The percentage of the Purchase Price attributed to the land itself. Land does not depreciate.<br><br><strong>Benchmark:</strong> A common rule of thumb is 20%, but this can vary dramatically based on location. Check your property tax assessment for a more accurate value.">Land Value (%) <span class="help-icon">?</span></span></label>
+                                <input type="text" id="landValuePct" class="mt-1 block w-full rounded-md shadow-sm sm:text-sm">
+                                 <div class="validation-error">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                                    <span></span>
+                                </div>
+                            </div>
+                            <div class="input-group md:col-span-2">
                                 <label for="depreciationMethod" class="block text-sm font-medium text-slate-700"><span class="tooltip-container" data-tooltip="Depreciation is a non-cash tax deduction representing the 'wear and tear' on a property. It's a major financial benefit for investors because it reduces your taxable income without affecting your actual cash flow, creating a 'tax shield'. The 27.5-year schedule is the standard IRS requirement for residential rental property in the US.">Depreciation Method<span class="help-icon">?</span></span></label>
                                 <select id="depreciationMethod" class="mt-1 block w-full rounded-md shadow-sm sm:text-sm">
                                     <option value="residential">27.5-Year Residential</option>
@@ -451,7 +459,7 @@
                                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                                 </svg>
                                 <div>
-                                    <span class="font-semibold">Depreciation Note:</span> A standard 27.5-year straight-line depreciation schedule is used. The depreciable basis is assumed to be 80% of the purchase price, a common estimate for the value of the structure excluding land.
+                                    <span class="font-semibold">Depreciation Note:</span> A standard 27.5-year straight-line depreciation schedule is used. The depreciable basis is the Purchase Price minus the Land Value.
                                 </div>
                             </div>
                         </div>
@@ -513,7 +521,15 @@
                                     <span></span>
                                 </div>
                             </div>
-                             <div class="input-group">
+                            <div class="input-group md:col-span-2">
+                                <label for="sp500Return" class="block text-sm font-medium text-slate-700"><span class="tooltip-container" data-tooltip="Your personal forecast for the S&P 500's average annual return over your hold period. This is used in the 'Investment Showdown' comparison.<br><br><strong>Benchmark:</strong> The historical long-term average is around 8-10%.">S&P 500 Exp. Return (%) <span class="help-icon">?</span></span></label>
+                                <input type="text" id="sp500Return" class="mt-1 block w-full rounded-md shadow-sm sm:text-sm">
+                                 <div class="validation-error">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                                    <span></span>
+                                </div>
+                            </div>
+                            <div class="input-group">
                                 <label for="minCashFlow" class="block text-sm font-medium text-slate-700"><span class="tooltip-container" data-tooltip="Your personal minimum acceptable monthly pre-tax cash flow. This is a key 'go/no-go' hurdle for a deal's viability. You can use a negative number if you are willing to subsidize the property for an appreciation play.">Min. Cash Flow ($/mo) <span class="help-icon">?</span></span></label>
                                 <input type="text" id="minCashFlow" class="mt-1 block w-full rounded-md shadow-sm sm:text-sm">
                                 <div class="validation-error">
@@ -635,29 +651,27 @@
                         otherIncome: 'otherIncome', propTaxes: 'propTaxes', insurance: 'insurance', vacancyPct: 'vacancyPct',
                         maintenancePct: 'maintenancePct', managementPct: 'managementPct', capExPct: 'capExPct', hoa: 'hoa',
                         otherExpenses: 'otherExpenses', annualIncomeGrowth: 'annualIncomeGrowth', annualExpenseGrowth: 'annualExpenseGrowth',
-                        annualValueGrowth: 'annualValueGrowth', salesExpensesPct: 'salesExpensesPct', holdPeriod: 'holdPeriod',
+                        annualValueGrowth: 'annualValueGrowth', salesExpensesPct: 'salesExpensesPct', holdPeriod: 'holdPeriod', sp500Return: 'sp500Return', landValuePct: 'landValuePct',
                         inflationRate: 'inflationRate',
                         marginalTaxRate: 'marginalTaxRate', capitalGainsTaxRate: 'capitalGainsTaxRate', depreciationMethod: 'depreciationMethod',
                         minCashFlow: 'minCashFlow', minCocRoi: 'minCocRoi', minForcedEquity: 'minForcedEquity', lenderDscrReq: 'lenderDscrReq', useItemizedCapEx: 'useItemizedCapEx', itemizedCapEx: 'itemizedCapExList',
                     },
                     outputs: {
                         outputContainer: 'output-container',
-                        appHeader: 'appHeader', decisionCard: 'decisionCard', verdictText: 'verdictText', verdictChecklist: 'verdictChecklist',
-                        monthlyCashFlow: 'monthlyCashFlow',
+                        appHeader: 'appHeader', showdownCard: 'showdownCard', verdictText: 'verdictText', verdictChecklist: 'verdictChecklist',
+                        monthlyCashFlow: 'monthlyCashFlow', projectionsTable: 'projectionsTable',
                         cocRoi: 'cocRoi',
+                        projectionsTable: 'projectionsTable',
                         afterTaxMonthlyCashFlow: 'afterTaxMonthlyCashFlow', afterTaxCocRoi: 'afterTaxCocRoi',
                         noi: 'noi',
                         capRate: 'capRate',
                         dscr: 'dscr',
                         totalCashNeeded: 'totalCashNeeded',
-                        projectionsTable: 'projectionsTable',
-                        onePercentRule: 'onePercentRule',
                         fiftyPercentRule: 'fiftyPercentRule',
                         debtYield: 'debtYield',
                         ltvLtc: 'ltvLtc',
                         cashReserves: 'cashReserves',
                         propertyAnnualizedReturn: 'propertyAnnualizedReturn', sp500AnnualizedReturn: 'sp500AnnualizedReturn',
-                        propertyTotalGain: 'propertyTotalGain', sp500TotalGain: 'sp500TotalGain',
                         expenseLegend: 'expenseLegend',
                         profitBreakdownSummary: 'profitBreakdownSummary',
                         grm: 'grm',
@@ -688,7 +702,7 @@
                     insurance: 120, vacancyPct: 5, maintenancePct: 5, managementPct: 8, capExPct: 5, hoa: 0,
                     otherExpenses: 50, annualIncomeGrowth: 3, annualExpenseGrowth: 3, annualValueGrowth: 4,
                     salesExpensesPct: 7, holdPeriod: 10, inflationRate: 2.5, useItemizedCapEx: false, itemizedCapEx: [],
-                    marginalTaxRate: 24, capitalGainsTaxRate: 15, depreciationMethod: 'residential',
+                    marginalTaxRate: 24, capitalGainsTaxRate: 15, depreciationMethod: 'residential', sp500Return: 8, landValuePct: 20,
                     minCashFlow: 200, minCocRoi: 8, minForcedEquity: 0, lenderDscrReq: 1.25,
                 },
                 strategyPresets: {
@@ -732,6 +746,7 @@
                     managementPct: { min: 0, max: 100, message: 'Must be between 0-100.' },
                     capExPct: { min: 0, max: 100, message: 'Must be between 0-100.' },
                     annualIncomeGrowth: { min: -100, max: 100, message: 'Must be a reasonable percentage.' },
+                    landValuePct: { min: 0, max: 100, message: 'Must be between 0-100.' },
                     annualExpenseGrowth: { min: -100, max: 100, message: 'Must be a reasonable percentage.' },
                     annualValueGrowth: { min: -100, max: 100, message: 'Must be a reasonable percentage.' },
                     salesExpensesPct: { min: 0, max: 100, message: 'Must be between 0-100.' },
@@ -742,6 +757,7 @@
                     minCashFlow: { message: 'Can be negative for appreciation plays.' },
                     minCocRoi: { min: 0, max: 100, message: 'Must be between 0-100.' },
                     minForcedEquity: { isNonNegative: true, message: 'Cannot be negative.' },
+                    sp500Return: { min: -100, max: 100, message: 'Must be a reasonable percentage.' },
                     lenderDscrReq: { isPositive: true, message: 'Must be positive.' },
                 },
                 URL_KEY_MAP: {
@@ -751,10 +767,9 @@
                     grossMonthlyRent: 'gmr', otherIncome: 'oi', propTaxes: 'pt', insurance: 'ins', vacancyPct: 'vac',
                     maintenancePct: 'main', managementPct: 'mgmt', capExPct: 'capx', hoa: 'hoa', otherExpenses: 'oe',
                     annualIncomeGrowth: 'ig', annualExpenseGrowth: 'eg', annualValueGrowth: 'vg', salesExpensesPct: 'sc',
-                    holdPeriod: 'hp', inflationRate: 'inf', marginalTaxRate: 'mtr', capitalGainsTaxRate: 'cgtr', depreciationMethod: 'dm',
+                    holdPeriod: 'hp', inflationRate: 'inf', marginalTaxRate: 'mtr', capitalGainsTaxRate: 'cgtr', depreciationMethod: 'dm', landValuePct: 'lvp', sp500Return: 'spr',
                     minCashFlow: 'mcf', minCocRoi: 'mcr', minForcedEquity: 'mfe', lenderDscrReq: 'ldr', itemizedCapEx: 'ice', useItemizedCapEx: 'uice'
                 },
-                sp500Returns: [0.2423, -0.1944, 0.2689, 0.1626, 0.2888, -0.0624, 0.1942, 0.0954, -0.0073, 0.0138, 0.2960, 0.1369, 0.1506, -0.0000, 0.3239, 0.0325, 0.1579, -0.3700, 0.0549, 0.1579, 0.0491, 0.1088, 0.2868, -0.1304, -0.2210, -0.1189, 0.2104, 0.2858, 0.3758, 0.2296, 0.3336, 0.0132, 0.0762, 0.1008, 0.3047, 0.0706, -0.0310, 0.1660, 0.3149, 0.0525]
             },
 
             state: {},
@@ -859,21 +874,30 @@
                     const interestRate = state.loanType.startsWith('fixed') ? state.interestRate : state.loanType.startsWith('arm') ? state.initialInterestRate : state.marginInterestRate;
                     const monthlyInterestRate = (interestRate / 100) / 12;
 
-                    if (state.loanType === 'margin') {
-                        const excessProfit = Math.max(0, monthlyNOI - state.minCashFlow);
-                        results.shared.monthlyPI = excessProfit * (state.marginRepaymentPct / 100);
-                        results.shared.expenseBreakdown = { 'Debt Service': results.shared.monthlyPI, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
+                    if (state.loanType !== 'margin') {
+                         results.shared.loanTermMonths = state.loanTerm * 12;
+                         results.shared.monthlyPI = this.calculatePi(results.shared.loanAmount, monthlyInterestRate, results.shared.loanTermMonths);
+                         results.shared.expenseBreakdown = { 'P&I': results.shared.monthlyPI, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
+                         results.shared.cashReserves = (results.shared.monthlyPI + state.propTaxes + state.insurance) * 6;
+                        results.shared.annualDebtService = results.shared.monthlyPI * 12;
+                        results.metrics.preTax.monthlyCashFlow = monthlyNOI - results.shared.monthlyPI;
+                    } else { // FIX: Correct Margin Loan logic for Year 1
                         const monthlyInterest = results.shared.loanAmount * monthlyInterestRate;
+                        const profitAfterInterest = monthlyNOI - monthlyInterest;
+                        const excessProfitForRepayment = Math.max(0, profitAfterInterest - state.minCashFlow);
+                        const principalRepayment = excessProfitForRepayment * (state.marginRepaymentPct / 100);
+                        const totalDebtService = monthlyInterest + principalRepayment;
+                        results.shared.monthlyPI = totalDebtService; 
+                        results.shared.expenseBreakdown = { 'Interest': monthlyInterest, 'Principal Paydown': principalRepayment, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
                         results.shared.cashReserves = (monthlyInterest + state.propTaxes + state.insurance) * 6;
-                    } else { 
+                        results.shared.annualDebtService = totalDebtService * 12;
+                        results.metrics.preTax.monthlyCashFlow = monthlyNOI - totalDebtService;
                         results.shared.loanTermMonths = state.loanTerm * 12;
                         results.shared.monthlyPI = this.calculatePi(results.shared.loanAmount, monthlyInterestRate, results.shared.loanTermMonths);
                         results.shared.expenseBreakdown = { 'P&I': results.shared.monthlyPI, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
                         results.shared.cashReserves = (results.shared.monthlyPI + state.propTaxes + state.insurance) * 6;
                     }
                     
-                    results.shared.annualDebtService = results.shared.monthlyPI * 12;
-                    results.metrics.preTax.monthlyCashFlow = monthlyNOI - results.shared.monthlyPI;
                     results.metrics.preTax.annualCashFlow = results.metrics.preTax.monthlyCashFlow * 12;
                     results.metrics.preTax.cocRoi = results.shared.totalCashNeeded > 0 ? results.metrics.preTax.annualCashFlow / results.shared.totalCashNeeded : (results.metrics.preTax.annualCashFlow > 0 ? Infinity : -Infinity);
                     
@@ -887,7 +911,7 @@
                     results.shared.onePercentRule = state.purchasePrice > 0 ? results.shared.totalMonthlyIncome / state.purchasePrice : 0;
                     results.shared.fiftyPercentRule = results.shared.totalMonthlyIncome > 0 ? (results.shared.monthlyOpEx - vacancyAmount) / results.shared.totalMonthlyIncome : 0;
 
-                    const depreciableBasis = state.purchasePrice * 0.80;
+                    const depreciableBasis = state.purchasePrice * (1 - state.landValuePct / 100);
                     const annualDepreciation = depreciableBasis / 27.5;
                     let y1Interest = 0; let bal = results.shared.loanAmount;
                     for (let m=0; m<12; m++) {
@@ -913,15 +937,15 @@
                         results.amortizationSchedule = this.calculateAmortization(state, results);
                     }
                     
-                    results.sp500 = this.calculateSp500EquivalentReturn(state.holdPeriod, results.shared.totalCashNeeded, state.capitalGainsTaxRate);
+                    results.sp500 = this.calculateSp500EquivalentReturn(state.holdPeriod, results.shared.totalCashNeeded, state.capitalGainsTaxRate, state.sp500Return);
                     
                     if (results.projections.length > 0) {
                         const finalYear = results.projections[results.projections.length - 1];
-                        
                         const salePrice = finalYear.propertyValue;
                         const sellingCosts = salePrice * (state.salesExpensesPct / 100);
                         const loanPayoff = finalYear.loanBalance;
-                        const totalDepreciation = finalYear.year * (state.purchasePrice * 0.8 / 27.5);
+                        // FIX: Use landValuePct for depreciation calculation
+                        const totalDepreciation = finalYear.year * (depreciableBasis / 27.5);
                         const capitalGain = salePrice - sellingCosts - state.purchasePrice;
                         const depreciationRecapture = Math.min(Math.max(0, capitalGain), totalDepreciation);
                         const appreciationGain = capitalGain - depreciationRecapture;
@@ -935,7 +959,8 @@
                         const lowestCumulativeCashFlow = Math.min(0, ...cumulativeCashFlows);
                         const additionalCapitalContributions = Math.abs(lowestCumulativeCashFlow < 0 ? lowestCumulativeCashFlow : 0);
                         const totalCapitalInvested = initialCashNeeded + additionalCapitalContributions;
-                        const trueNetProfit = netCashFromSale - totalCapitalInvested;
+                        // FIX: Correct "dead code" profit calculation
+                        const trueNetProfit = (netCashFromSale + finalYear.afterTax.cumulativeCashFlow) - totalCapitalInvested;
                         const totalReturnOnCapital = totalCapitalInvested > 0 ? trueNetProfit / totalCapitalInvested : (trueNetProfit > 0 ? Infinity : -Infinity);
                         
                         results.shared.longTermReturn = totalCapitalInvested > 0 && totalReturnOnCapital > -1 ? Math.pow(1 + totalReturnOnCapital, 1 / state.holdPeriod) - 1 : (totalReturnOnCapital <= -1 ? -1 : 0);
@@ -967,8 +992,8 @@
                     let cumulativeCashFlow = 0, cumulativeAfterTaxCashFlow = 0, cumulativeDepreciation = 0;
                     let equityAtStartOfYear = currentPropertyValue - loanBalance;
                     let currentMonthlyIncome = initialResults.shared.totalMonthlyIncome;
-                    let fixedMonthlyExpenses = state.propTaxes + state.insurance + state.hoa + state.otherExpenses;
-                    const depreciableBasis = state.purchasePrice * 0.80;
+                    let fixedMonthlyExpenses = state.propTaxes + state.insurance + state.hoa + state.otherExpenses;                    
+                    const depreciableBasis = state.purchasePrice * (1 - state.landValuePct / 100);
                     const annualDepreciation = depreciableBasis / 27.5;
                     const maxYears = Math.min(Math.max(1, state.holdPeriod), 50);
                     const projections = [];
@@ -1009,9 +1034,11 @@
                             annualInterestPaid += interest;
 
                             if (state.loanType === 'margin') {
-                                const excessProfit = Math.max(0, monthlyNOI - state.minCashFlow);
-                                monthlyPI = excessProfit * (state.marginRepaymentPct / 100);
-                                const principalPaid = monthlyPI - interest;
+                                // FIX: Correct margin loan principal/interest logic in projection loop
+                                const profitAfterInterest = monthlyNOI - interest;
+                                const excessProfitForRepayment = Math.max(0, profitAfterInterest - state.minCashFlow);
+                                const principalPaid = excessProfitForRepayment * (state.marginRepaymentPct / 100);
+                                monthlyPI = interest + principalPaid;
                                 loanBalance -= principalPaid;
                             } else {
                                 const remainingTerm = (state.loanTerm * 12) - ((year - 1) * 12 + (month - 1));
@@ -1151,22 +1178,46 @@
                     return schedule;
                 },
                 
-                calculateSp500EquivalentReturn(holdPeriod, initialInvestment, capitalGainsTaxRate) {
+                calculateSp500EquivalentReturn(holdPeriod, initialInvestment, capitalGainsTaxRate, expectedReturn) {
                    if (initialInvestment <= 0 || holdPeriod <= 0) return { finalValue: 0, totalProfit: 0, annualizedReturn: 0 };
                    
-                   const relevantReturns = App.config.sp500Returns.slice(0, holdPeriod);
-                   let currentValue = initialInvestment;
-                   relevantReturns.forEach(r => { currentValue *= (1 + r); });
+                   const annualReturnDecimal = expectedReturn / 100;
+                   const finalValue = initialInvestment * Math.pow(1 + annualReturnDecimal, holdPeriod);
 
-                   const preTaxProfit = currentValue - initialInvestment;
+                   const preTaxProfit = finalValue - initialInvestment;
                    const taxOnProfit = preTaxProfit > 0 ? preTaxProfit * (capitalGainsTaxRate / 100) : 0;
                    const afterTaxProfit = preTaxProfit - taxOnProfit;
 
+                   const afterTaxFinalValue = initialInvestment + afterTaxProfit;
                    const afterTaxTotalRoi = afterTaxProfit / initialInvestment;
                    const annualizedReturn = afterTaxTotalRoi > -1 ? Math.pow(1 + afterTaxTotalRoi, 1 / holdPeriod) - 1 : -1;
                    
-                   return { finalValue: initialInvestment + afterTaxProfit, totalProfit: afterTaxProfit, annualizedReturn };
-               }
+                   return { finalValue: afterTaxFinalValue, totalProfit: afterTaxProfit, annualizedReturn };
+               },
+
+               calculateIRR(cashflows, guess = 0.1) {
+                    const maxIterations = 100;
+                    const tolerance = 1e-7;
+                    let irr = guess;
+                    for (let i = 0; i < maxIterations; i++) {
+                        let npv = 0, derivative = 0;
+                        for (let t = 0; t < cashflows.length; t++) {
+                            npv += cashflows[t] / Math.pow(1 + irr, t);
+                            if (t > 0) derivative -= t * cashflows[t] / Math.pow(1 + irr, t + 1);
+                        }
+                        if (Math.abs(npv) < tolerance) return irr;
+                        if (derivative === 0) return NaN;
+                        irr -= npv / derivative;
+                    }
+                    return NaN; // Failed to converge
+               },
+
+               calculateMoIC(cashflows) {
+                    const totalInvested = cashflows.filter(cf => cf < 0).reduce((sum, cf) => sum + cf, 0);
+                    const totalReturned = cashflows.filter(cf => cf > 0).reduce((sum, cf) => sum + cf, 0);
+                    if (totalInvested === 0) return Infinity;
+                    return totalReturned / Math.abs(totalInvested);
+                }
             },
 
             ui: {
@@ -1216,7 +1267,7 @@
 
                 update(results) {
                     const outputContainer = document.getElementById(App.config.dom.outputs.outputContainer);
-                    if (outputContainer && !document.getElementById(App.config.dom.outputs.decisionCard)) {
+                    if (outputContainer && !document.getElementById(App.config.dom.outputs.showdownCard)) {
                         this.renderInitialOutputLayout(outputContainer);
                     }
                     this.updateVerdict(results);
@@ -1231,45 +1282,35 @@
                         this.updateWealthProjectionChart(results);
                         this.updateOptimalExitChart(results);
                         this.updateReturnWaterfallChart(results);
+                        this.updateWealthSourcesSummary(results); // FIX: Move this call INSIDE the setTimeout block
                     }, 0);
                 },
 
                 renderInitialOutputLayout(container) {
-                    container.innerHTML = `
-                        <div id="decisionCard" class="p-6 border-2 bg-white rounded-xl shadow-sm border-slate-200" style="border-color: var(--strategy-color);">
-                            <h2 class="text-2xl font-bold text-slate-900">Verdict & Key Insights</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 mt-4">
-                                <div id="shortTermSection" class="transition-all duration-300 p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="font-semibold text-slate-800">Viability Checklist <span class="text-slate-500 font-normal">(Year 1)</span></h3>
-                                        <span id="verdictText" class="font-bold text-2xl"></span>
-                                    </div>
-                                    <p class="mt-1 text-xs text-slate-500">Compares pre-tax results to your investment criteria.</p>
-                                    <ul id="verdictChecklist" class="mt-4 space-y-2.5 text-slate-700 text-sm"></ul>
-                                </div>
-                                <div class="space-y-4">
-                                    <div id="reservesSection" class="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                        <h3 class="font-semibold text-slate-800"><span class="tooltip-container" data-tooltip="A crucial safety net. This is an estimate of the liquid cash you should have on hand to cover unexpected vacancies, major repairs, or economic downturns. We calculate this as 6 months of PITI (or PIT-Interest for margin loans).">Recommended Cash Reserves <span class="help-icon">?</span></span></h3>
-                                        <p id="cashReserves" class="text-3xl font-bold text-slate-900 mt-1"></p>
-                                        <div id="cashReservesBreakdown" class="metric-breakdown text-xs text-slate-500 mt-1"></div>
-                                    </div>
-                                    <div id="opportunityCostSection" class="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                        <h3 class="font-semibold text-slate-800"><span class="tooltip-container" data-tooltip="Compares your property's after-tax return to a simulated investment in the S&P 500.<br><br><strong>Data Source Note:</strong> To ensure privacy, reliability, and offline use, this comparison uses a hardcoded array of actual S&P 500 total returns (with dividends reinvested) from recent history. This provides a realistic historical backtest against real-world market volatility.">Opportunity Cost <span class="text-slate-500 font-normal">(After-Tax)</span><span class="help-icon">?</span></span></h3>
-                                        <div class="flex justify-around items-center mt-2">
-                                            <div class="text-center">
-                                                <p class="text-sm text-slate-600">This Property</p>
-                                                <p id="propertyAnnualizedReturn" class="text-2xl font-bold"></p>
-                                                <p id="propertyTotalGain" class="text-xs text-slate-500"></p>
-                                            </div>
-                                            <div class="text-center text-slate-400 pb-4">vs</div>
-                                            <div class="text-center">
-                                                <p class="text-sm text-slate-600">S&P 500</p>
-                                                <p id="sp500AnnualizedReturn" class="text-2xl font-bold"></p>
-                                                <p id="sp500TotalGain" class="text-xs text-slate-500"></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                     container.innerHTML = `
+                        <div id="showdownCard" class="p-6 bg-white rounded-xl shadow-sm border-2 border-slate-200" style="border-color: var(--strategy-color);">
+                            <h2 class="text-2xl font-bold text-slate-900">Investment Showdown: Property vs. S&P 500</h2>
+                            <p class="text-sm text-slate-600 mt-1">A true "apples-to-apples" comparison to answer the question: what's the best use of your capital?</p>
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                        <tr>
+                                            <th class="px-4 py-2">Metric</th>
+                                            <th class="px-4 py-2 text-center">This Property</th>
+                                            <th class="px-4 py-2 text-center">S&P 500</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="showdownTableBody" class="divide-y divide-slate-200">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="showdownVerdict" class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800">
+                            </div>
+                             <div class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                                <h3 class="font-semibold text-slate-800">Property Viability Checklist <span class="text-slate-500 font-normal">(Year 1, Pre-Tax)</span></h3>
+                                <p class="mt-1 text-xs text-slate-500">A simple GO/NO-GO check against your criteria for the property itself.</p>
+                                <span id="verdictText" class="hidden"></span>
+                                <ul id="verdictChecklist" class="mt-3 space-y-2 text-slate-700 text-sm"></ul>
                             </div>
                         </div>
 
@@ -1441,9 +1482,13 @@
                         </div>
 
                         <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <h2 class="text-2xl font-semibold text-slate-900 mb-4"><span class="tooltip-container" data-tooltip="This chart shows where your total profit comes from at the end of your hold period. It visualizes the three main ways a rental property makes you money: cash flow (ongoing income), loan paydown (equity through debt reduction), and appreciation (market value growth).">Profit Waterfall <span class="text-slate-500 font-normal">(Pre-Tax)</span><span class="help-icon">?</span></span></h2>
+                            <h2 class="text-2xl font-semibold text-slate-900 mb-1">Sources of Wealth</h2>
+                            <p class="text-sm text-slate-600 mb-4"><span class="tooltip-container" data-tooltip="This chart shows how your initial investment grows into your final equity. It visualizes the three engines of real estate wealth creation: cash flow (income), loan paydown (forced savings), and appreciation (market growth).">
+                                How your initial equity is built up over the hold period.
+                                <span class="help-icon">?</span>
+                            </span></p>
                             <div id="profitBreakdownSummary" class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200"></div>
-                            <div class="h-64 relative">
+                            <div class="h-72 relative">
                                 <canvas id="returnWaterfallChart"></canvas>
                             </div>
                         </div>
@@ -1489,12 +1534,49 @@
                         }
                     }
                 },
+               
+                updateWealthSourcesSummary(results) {
+                    const { shared, state, projections } = results;
+                    const { formatCurrency } = App.utils;
+                    const { colors } = App.config;
+                    const summaryEl = document.getElementById('profitBreakdownSummary');
+                    if (!summaryEl || projections.length === 0) return;
+
+                    const finalYear = projections[projections.length - 1];
+
+                    const components = [
+                        { name: 'Total Cash Flow', value: finalYear.preTax.cumulativeCashFlow, color: colors.strategy.cashflow, icon: '💰' },
+                        { name: 'Loan Paydown', value: shared.loanAmount - finalYear.loanBalance, color: colors.strategy.valueadd, icon: '🏦' },
+                        { name: 'Appreciation', value: finalYear.propertyValue - state.purchasePrice, color: colors.strategy.appreciation, icon: '📈' }
+                    ];
+
+                    const totalProfit = components.reduce((sum, c) => sum + c.value, 0);
+
+                    const componentCardsHTML = components.map(comp => `
+                        <div class="flex items-center p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-lg" style="background-color:${comp.color}">${comp.icon}</div>
+                            <div class="ml-3 flex-1">
+                                <p class="text-sm font-medium text-slate-700">${comp.name}</p>
+                                <p class="text-lg font-semibold ${comp.value >= 0 ? 'text-slate-900' : 'text-red-600'}">${formatCurrency(comp.value)}</p>
+                            </div>
+                        </div>`).join('');
+
+                    summaryEl.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-slate-800">Pre-Tax Profit Breakdown</h3> 
+                            <div class="text-right">
+                                <div class="text-sm text-slate-600 tooltip-container justify-end" data-tooltip="The property's raw earning power, calculated <strong>before</strong> taxes and selling costs. <br><br><strong>Formula:</strong> (Appreciation + Loan Paydown + Pre-Tax Cash Flow).">Total Pre-Tax Profit <span class="help-icon">?</span></div>
+                                <div class="text-xl font-bold ${totalProfit >= 0 ? 'text-green-700' : 'text-red-700'}">${formatCurrency(totalProfit)}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${componentCardsHTML}</div>`;
+                },
 
                 updateVerdict(results) {
                     const { dom } = App.config;
                     const { formatCurrency, formatPercent } = App.utils;
-                    const { metrics, shared, state, sp500 } = results;
-                    const { verdict, cashReserves, longTermReturn } = shared;
+                    const { metrics, shared, state, sp500, projections } = results;
+                    const { verdict } = shared;
                     
                     const verdictTextEl = document.getElementById(dom.outputs.verdictText);
                     if (verdictTextEl) {
@@ -1512,7 +1594,7 @@
                     
                     const verdictChecklistEl = document.getElementById(dom.outputs.verdictChecklist);
                     if (verdictChecklistEl) {
-                        verdictChecklistEl.innerHTML = `
+                        verdictChecklistEl.innerHTML = `<div class="max-w-md mx-auto space-y-2.5">
                         <li class="flex justify-between items-center">${check(verdict.forcedEquityPass)} <span>Forced Equity ≥ ${formatCurrency(state.minForcedEquity)}</span> <span class="font-semibold">${formatCurrency(shared.forcedEquity)}</span></li>
                         <li class="flex justify-between items-center">${check(verdict.cashFlowPass)} <span>Pre-Tax CF ≥ ${formatCurrency(state.minCashFlow)}</span> <span class="font-semibold">${formatCurrency(metrics.preTax.monthlyCashFlow)}</span></li>
                         <li class="flex justify-between items-center">${check(verdict.cocPass)} <span>Pre-Tax CoC ≥ ${state.minCocRoi}%</span> <span class="font-semibold">${formatPercent(metrics.preTax.cocRoi)}</span></li>
@@ -1520,32 +1602,46 @@
                         `;
                     }
                     
-                    if (state.loanType === 'margin') {
-                        const monthlyInterest = shared.loanAmount * ((state.marginInterestRate / 100) / 12);
-                        this._setMetric('cashReserves', formatCurrency(cashReserves), `(${formatCurrency(monthlyInterest, 0)} + ${formatCurrency(state.propTaxes, 0)} + ...) x 6`);
-                    } else {
-                        this._setMetric('cashReserves', formatCurrency(cashReserves), `(${formatCurrency(shared.monthlyPI, 0)} + ${formatCurrency(state.propTaxes, 0)} + ...) x 6`);
-                    }
-                    
-                    const propReturnEl = document.getElementById(dom.outputs.propertyAnnualizedReturn);
-                    const spReturnEl = document.getElementById(dom.outputs.sp500AnnualizedReturn);
-                    const propertyTotalGainEl = document.getElementById('propertyTotalGain');
-                    const sp500TotalGainEl = document.getElementById('sp500TotalGain');
+                    const finalYear = projections[projections.length - 1];
+                    const saleProceeds = finalYear.propertyValue - (finalYear.propertyValue * (state.salesExpensesPct / 100)) - finalYear.loanBalance - finalYear.taxImpact;
+                    const propertyCashFlows = [ -shared.totalCashNeeded, ...projections.map(p => p.afterTax.cashFlow) ];
+                    propertyCashFlows[propertyCashFlows.length - 1] += saleProceeds;
 
-                    const finalYearProjection = results.projections.length > 0 ? results.projections[results.projections.length - 1] : null;
-                    const afterTaxTotalProfit = finalYearProjection ? finalYearProjection.afterTax.profitIfSold : 0;
+                    const propertyIRR = App.calculator.calculateIRR(propertyCashFlows) || 0;
+                    const propertyMoIC = App.calculator.calculateMoIC(propertyCashFlows) || 0;
+                    const propertyProfit = finalYear.afterTax.profitIfSold;
+                    const propertyTotalCapital = Math.abs(propertyCashFlows.filter(cf => cf < 0).reduce((sum, cf) => sum + cf, 0));
 
-                    if (propReturnEl) {
-                        propReturnEl.textContent = formatPercent(longTermReturn);
-                        propReturnEl.className = `text-2xl font-bold ${longTermReturn > sp500.annualizedReturn ? 'text-green-600' : 'text-red-600'}`;
+                    const sp500CashFlows = [-shared.totalCashNeeded, ...Array(state.holdPeriod - 1).fill(0), sp500.finalValue];
+                    const sp500IRR = App.calculator.calculateIRR(sp500CashFlows) || 0;
+                    const sp500MoIC = App.calculator.calculateMoIC(sp500CashFlows) || 0;
+
+                    const showdownTableBody = document.getElementById('showdownTableBody');
+                    if (showdownTableBody) {
+                        const createRow = (metric, propValue, spValue, formatter, helpText) => {
+                            const propWin = propValue > spValue;
+                            const spWin = spValue > propValue;
+                            return `<tr class="text-base"><td class="px-4 py-3 font-semibold text-slate-800"><span class="tooltip-container" data-tooltip="${helpText}">${metric}<span class="help-icon" data-tooltip="${helpText}">?</span></span></td><td class="px-4 py-2 text-center text-lg font-bold ${propWin ? 'text-green-600' : ''}">${formatter(propValue)}</td><td class="px-4 py-2 text-center text-lg font-bold ${spWin ? 'text-green-600' : ''}">${formatter(spValue)}</td></tr>`;
+                        };
+                        showdownTableBody.innerHTML = 
+                            createRow('IRR (Internal Rate of Return)', propertyIRR, sp500IRR, v => formatPercent(v), "The 'true' annualized return, considering all cash flows over time. This is the best metric for an apples-to-apples comparison.") +
+                            createRow('Total After-Tax Profit', propertyProfit, sp500.totalProfit, v => formatCurrency(v), "The absolute amount of money you make after all costs and taxes.") +
+                            createRow('MoIC (Multiple on Invested Capital)', propertyMoIC, sp500MoIC, v => `${v.toFixed(2)}x`, "How many dollars you get back for every dollar invested. A MoIC of 2.5x means you got back $2.50 for every $1 you put in.") +
+                            createRow('Total Capital Invested', propertyTotalCapital, shared.totalCashNeeded, v => formatCurrency(v), "The total cash out-of-pocket required over the entire hold period. Includes initial investment and any years with negative cash flow.");
                     }
-                    if (spReturnEl) {
-                        spReturnEl.textContent = formatPercent(sp500.annualizedReturn);
-                        spReturnEl.className = 'text-2xl font-bold text-slate-800';
+
+                    const showdownVerdictEl = document.getElementById('showdownVerdict');
+                    if (showdownVerdictEl) {
+                        let verdictHTML = '<span class="font-semibold">Verdict:</span> ';
+                        if (propertyIRR > sp500IRR && propertyProfit > sp500.totalProfit) {
+                            verdictHTML += `The <strong class="text-green-700">Property appears to be the superior investment</strong>, showing a higher time-adjusted return (IRR) and generating more total profit.`;
+                        } else if (sp500IRR > propertyIRR && sp500.totalProfit > propertyProfit) {
+                            verdictHTML += `The <strong class="text-blue-700">S&P 500 appears to be the superior investment</strong>, offering a better return for less complexity.`;
+                        } else {
+                            verdictHTML += `It's a mixed result. The <strong>${propertyIRR > sp500IRR ? 'Property' : 'S&P 500'}</strong> shows a better rate of return (IRR), while the <strong>${propertyProfit > sp500.totalProfit ? 'Property' : 'S&P 500'}</strong> generates more absolute profit. Your choice depends on your primary goal: rate of return vs. total dollars.`;
+                        }
+                        showdownVerdictEl.innerHTML = verdictHTML;
                     }
-                    
-                    if(propertyTotalGainEl) propertyTotalGainEl.textContent = `Total profit: ${formatCurrency(afterTaxTotalProfit)}`;
-                    if(sp500TotalGainEl) sp500TotalGainEl.textContent = `Total profit: ${formatCurrency(sp500.totalProfit)}`;
                 },
 
                 updateSaleAnalysis(results) {
@@ -1566,7 +1662,7 @@
                     const salePrice = finalYear.propertyValue;
                     const sellingCosts = salePrice * (state.salesExpensesPct / 100);
                     const loanPayoff = finalYear.loanBalance;
-                    const totalDepreciation = finalYear.year * (state.purchasePrice * 0.8 / 27.5);
+                    const totalDepreciation = finalYear.year * (state.purchasePrice * (1 - state.landValuePct / 100) / 27.5);
                     
                     const capitalGain = salePrice - sellingCosts - state.purchasePrice;
                     const depreciationRecapture = Math.min(Math.max(0, capitalGain), totalDepreciation);
@@ -1583,8 +1679,12 @@
                     const lowestCumulativeCashFlow = Math.min(0, ...cumulativeCashFlows);
                     const additionalCapitalContributions = Math.abs(lowestCumulativeCashFlow < 0 ? lowestCumulativeCashFlow : 0);
                     const totalCapitalInvested = initialCashNeeded + additionalCapitalContributions;
-                    const trueNetProfit = netCashFromSale - totalCapitalInvested;
-                    const totalReturnOnCapital = totalCapitalInvested > 0 ? trueNetProfit / totalCapitalInvested : (trueNetProfit > 0 ? Infinity : -Infinity);
+                    const capitalInvestedTooltip = `This is the total out-of-pocket cash invested.<br><br>
+                        &bull; Initial Investment (Day 1): ${formatCurrency(initialCashNeeded, 0)}<br>
+                        &bull; Capital for Shortfalls: + ${formatCurrency(additionalCapitalContributions, 0)}<br>
+                        <strong>&bull; Total Invested: ${formatCurrency(totalCapitalInvested, 0)}</strong>`;
+                    const trueNetProfit = (netCashFromSale + finalYear.afterTax.cumulativeCashFlow) - totalCapitalInvested; // <-- FIX: Added cumulative cash flow to the calculation
+                    const totalReturnOnCapital = totalCapitalInvested > 0 ? trueNetProfit / totalCapitalInvested : (trueNetProfit > 0 ? Infinity : -Infinity); // FIX: Added cumulative cash flow to the calculation
                     const annualizedReturnOnCapital = totalCapitalInvested > 0 && totalReturnOnCapital > -1 ? Math.pow(1 + totalReturnOnCapital, 1 / state.holdPeriod) - 1 : (totalReturnOnCapital <= -1 ? -1 : 0);
 
                     yearEl.textContent = finalYear.year;
@@ -1621,11 +1721,14 @@
                             <span class="font-bold text-lg">${formatCurrency(netCashFromSale)}</span>
                         </div>
                         <div class="flex justify-between items-center pt-3 border-t mt-3 border-slate-200">
-                            <span class="text-slate-600 tooltip-container" data-tooltip="Initial cash needed plus any capital required to cover losses over the hold period.">Total Capital Invested <span class="help-icon">?</span></span>
+                            <span class="text-slate-600 tooltip-container" data-tooltip="${capitalInvestedTooltip}">Total Capital Invested <span class="help-icon">?</span></span>
                             <span class="font-semibold text-red-600">-${formatCurrency(totalCapitalInvested)}</span>
                         </div>
                         <div class="flex justify-between items-center py-2 border-t mt-2 border-slate-200">
-                            <span class="font-semibold">📊 True Net Profit</span>
+                            <span class="font-semibold tooltip-container" data-tooltip="Your final, bottom-line profit after all taxes and expenses. <br><br><strong>Formula:</strong> (Net Cash from Sale + All Cumulative Cash Flow) - (Total Capital Invested). <br><br>This is the same headline 'After-Tax Profit' shown in the 'Investment Showdown' card.">
+                                📊 True Net Profit
+                                <span class="help-icon">?</span>
+                            </span>
                             <span class="font-bold text-xl ${trueNetProfit >= 0 ? 'text-green-700' : 'text-red-700'}">${formatCurrency(trueNetProfit)}</span>
                         </div>
                         <div class="text-right text-xs text-slate-500 -mt-1">
@@ -1746,7 +1849,7 @@
                         ? [colors.strategy.valueadd, colors.strategy.appreciation] 
                         : colors.chart.primary;
                     
-                    const backgroundColors = chartColors.map(c => hexToRgba(c, 0.75));
+                    const backgroundColors = chartColors.map(c => App.utils.hexToRgba(c, 0.75));
 
                     legendEl.innerHTML = labels.map((label, i) => `
                         <div class="flex items-center justify-between py-1 px-2 rounded hover:bg-slate-100 transition-colors cursor-pointer group expense-legend-item" data-index="${i}">
@@ -1805,95 +1908,88 @@
                     updatePercentages();
                 },
                 
-                updateReturnWaterfallChart({ shared, sp500, state }) {
-                    const { returnWaterfall } = shared;
+                // FIX: Replace entire function with improved "Sources of Wealth" waterfall chart
+                updateReturnWaterfallChart({ shared, state, projections }) {
                     const { dom, colors } = App.config;
-                    const { formatCurrency, hexToRgba } = App.utils;
-                    const summaryEl = document.getElementById('profitBreakdownSummary');
-                    if (summaryEl) {
-                        const totalProfit = returnWaterfall.cashFlow + returnWaterfall.loanPaydown + returnWaterfall.appreciation;
-                        const components = [
-                            { name: 'Total Cash Flow', value: returnWaterfall.cashFlow, color: colors.strategy.cashflow, icon: '💰' },
-                            { name: 'Loan Paydown', value: returnWaterfall.loanPaydown, color: colors.strategy.valueadd, icon: '🏦' },
-                            { name: 'Appreciation', value: returnWaterfall.appreciation, color: colors.strategy.appreciation, icon: '📈' }
-                        ].filter(c => Math.abs(c.value) > 0.01);
-
-                        const componentCardsHTML = components.map(comp => {
-                            const contributionPct = totalProfit !== 0 ? Math.abs((comp.value / totalProfit) * 100).toFixed(1) : '0';
-                            return `
-                            <div class="flex items-center p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                                <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-lg" style="background-color:${comp.color}">${comp.icon}</div>
-                                <div class="ml-3 flex-1">
-                                    <p class="text-sm font-medium text-slate-700">${comp.name}</p>
-                                    <p class="text-lg font-semibold ${comp.value >= 0 ? 'text-slate-900' : 'text-red-600'}">${formatCurrency(comp.value)}</p>
-                                    <p class="text-xs text-slate-500">${formatCurrency(comp.value / state.holdPeriod)}/year avg</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-sm font-medium text-slate-700">${contributionPct}%</div>
-                                    <div class="text-xs text-slate-500">of total</div>
-                                </div>
-                            </div>`;
-                        }).join('');
-                        
-                        summaryEl.innerHTML = `
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-slate-800">Profit Breakdown</h3>
-                                    <p class="text-sm text-slate-600">Over ${state.holdPeriod}-year hold period</p>
-                                </div>
-                                <div class="flex flex-col items-end">
-                                    <div class="text-sm text-slate-600 mb-1">Total Pre-Tax Return</div>
-                                    <div class="px-3 py-1 rounded-full text-lg font-bold ${totalProfit >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${formatCurrency(totalProfit)}</div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${componentCardsHTML || '<p class="text-center text-slate-500 md:col-span-3">No profit components to display.</p>'}</div>`;
-                    }
+                    const { formatCurrency } = App.utils;
                     
                     const chartEl = document.getElementById(dom.charts.profitWaterfallChart);
-                    if (!chartEl) return;
+                    if (!chartEl || projections.length === 0) return;
                     const ctx = chartEl.getContext('2d');
                     if (App.charts.profitWaterfall) App.charts.profitWaterfall.destroy();
 
-                    let runningTotal = 0; const data = [], backgroundColors = [], labels = [];
-                    if (returnWaterfall.cashFlow !== 0) { labels.push('Total Cash Flow'); data.push([runningTotal, runningTotal += returnWaterfall.cashFlow]); backgroundColors.push(hexToRgba(colors.strategy.cashflow, 0.7)); }
-                    if (returnWaterfall.loanPaydown !== 0) { labels.push('Loan Paydown'); data.push([runningTotal, runningTotal += returnWaterfall.loanPaydown]); backgroundColors.push(hexToRgba(colors.strategy.valueadd, 0.7)); }
-                    if (returnWaterfall.appreciation !== 0) { labels.push('Appreciation'); data.push([runningTotal, runningTotal += returnWaterfall.appreciation]); backgroundColors.push(hexToRgba(colors.strategy.appreciation, 0.7)); }
-                    
-                    const totalProfit = runningTotal, spProfit = sp500.totalProfit, range = Math.abs(Math.max(0, totalProfit, spProfit) - Math.min(0, totalProfit, spProfit));
-                    
-                    const referenceLinesPlugin = {
-                        id: 'referenceLines',
-                        afterDraw: chart => {
-                            const { ctx, scales: { x: xScale }, chartArea } = chart;
-                            const drawLine = (value, color, label, dashes = [], yOffset = 0) => {
-                                const xPos = xScale.getPixelForValue(value);
-                                if (xPos >= chartArea.left && xPos <= chartArea.right) {
-                                    ctx.save();
-                                    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(dashes);
-                                    ctx.beginPath(); ctx.moveTo(xPos, chartArea.top - 10); ctx.lineTo(xPos, chartArea.bottom); ctx.stroke();
-                                    ctx.fillStyle = color; ctx.font = 'bold 10px Inter, sans-serif';
-                                    const textWidth = ctx.measureText(label).width;
-                                    ctx.textAlign = (xPos + textWidth / 2 + 5 > chartArea.right) ? 'right' : (xPos - textWidth / 2 - 5 < chartArea.left) ? 'left' : 'center';
-                                    ctx.fillText(label, xPos, chartArea.top - 15 + yOffset);
-                                    ctx.restore();
-                                }
-                            };
-                            const labelPositions = [ { value: totalProfit, label: `Total: ${formatCurrency(totalProfit)}` }, { value: spProfit, label: `S&P 500: ${formatCurrency(spProfit)}` } ].sort((a,b) => a.value - b.value);
-                            let yOffset = (Math.abs(xScale.getPixelForValue(labelPositions[1].value) - xScale.getPixelForValue(labelPositions[0].value)) < 95) ? 15 : 0;
-                            drawLine(0, colors.status.dark, '$0');
-                            drawLine(totalProfit, totalProfit >= 0 ? colors.status.positive : colors.status.negative, `Total: ${formatCurrency(totalProfit)}`, [4, 4], totalProfit < spProfit ? yOffset: 0);
-                            drawLine(spProfit, colors.chart.primary[2], `S&P 500: ${formatCurrency(spProfit)}`, [2, 2], totalProfit > spProfit ? yOffset: 0);
-                        }
-                    };
+                    const finalYear = projections[projections.length - 1];
+                    const initialEquity = shared.downPaymentAmount + state.rehabCosts;
+                    const totalCashFlow = finalYear.preTax.cumulativeCashFlow;
+                    const loanPaydown = shared.loanAmount - finalYear.loanBalance;
+                    const appreciation = finalYear.propertyValue - state.purchasePrice;
+
+                    const dataPoints = [
+                        { label: 'Initial Equity', value: initialEquity, color: colors.status.dark },
+                        { label: 'Total Cash Flow', value: totalCashFlow, color: colors.strategy.cashflow },
+                        { label: 'Loan Paydown', value: loanPaydown, color: colors.strategy.valueadd },
+                        { label: 'Appreciation', value: appreciation, color: colors.strategy.appreciation },
+                    ];
+
+                    const labels = [...dataPoints.map(d => d.label), 'Final Equity'];
+                    const data = [];
+                    let runningTotal = 0;
+
+                    dataPoints.forEach(dp => {
+                        data.push([runningTotal, runningTotal + dp.value]);
+                        runningTotal += dp.value;
+                    });
+
+                    data.push([0, runningTotal]);
 
                     App.charts.profitWaterfall = new Chart(ctx, {
-                        type: 'bar', 
-                        data: { labels, datasets: [{ data, backgroundColor: backgroundColors, borderRadius: 6, barThickness: 40 }] },
-                        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30, right: 15, left: 15, bottom: 5 } }, 
-                            scales: { x: { min: Math.min(0, totalProfit, spProfit) - range * 0.1, max: Math.max(0, totalProfit, spProfit) + range * 0.1, ticks: { callback: v => formatCurrency(v) }}}, 
-                            plugins: {  legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: c => `${c.chart.data.labels[c.dataIndex]}: ${formatCurrency(c.raw[1] - c.raw[0])}` } } } 
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: [...dataPoints.map(d => App.utils.hexToRgba(d.color, 0.75)), App.utils.hexToRgba(colors.status.positive, 0.85)],
+                                barPercentage: 0.8
+                            }]
                         },
-                        plugins: [referenceLinesPlugin]
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { 
+                                    callbacks: { 
+                                        label: c => {
+                                            const isTotalBar = c.dataIndex === c.dataset.data.length - 1;
+                                            const diff = isTotalBar ? c.raw[1] : c.raw[1] - c.raw[0];
+                                            return `${c.chart.data.labels[c.dataIndex]}: ${formatCurrency(diff, 0)}`;
+                                        }
+                                    } 
+                                },
+                                datalabels: {
+                                    display: true,
+                                    align: (context) => {
+                                        const isLastComponentBar = context.dataIndex === context.dataset.data.length - 2;
+                                        return isLastComponentBar ? 'start' : 'end';
+                                    },
+                                    anchor: 'end',
+                                    color: (context) => {
+                                        return context.dataIndex === context.dataset.data.length - 2 ? '#f1f5f9' : '#334155';
+                                     },
+                                    font: { weight: 'semibold' },
+                                    formatter: (value, context) => {
+                                        const isTotalBar = context.dataIndex === context.dataset.data.length - 1;
+                                        const barData = context.dataset.data[context.dataIndex];
+                                        const diff = isTotalBar ? barData[1] : barData[1] - barData[0];
+                                        return formatCurrency(diff, 0);
+                                    }
+                                }
+                            },
+                            scales: { 
+                                y: { ticks: { callback: v => formatCurrency(v, 0) }, 
+                                // FIX 3: Add 15% padding to the top of the Y-axis to prevent the final label from being cut off
+                                max: runningTotal * 1.15 } 
+                            }
+                        }
                     });
                 },
                 
@@ -1911,8 +2007,8 @@
                         : projections.map(p => p.preTax.cashFlow);
 
                     const datasets = [
-                        { label: 'Property Value', data: projections.map(p => p.propertyValue), backgroundColor: hexToRgba(colors.strategy.valueadd, 0.4), borderColor: colors.strategy.valueadd, fill: 'start', yAxisID: 'yCurrency', order: 2, pointRadius: 0, tension: 0.1 },
-                        { label: 'Loan Balance', data: projections.map(p => p.loanBalance), backgroundColor: hexToRgba(colors.status.dark, 0.6), borderColor: colors.status.neutral, fill: 'start', yAxisID: 'yCurrency', order: 3, pointRadius: 0, tension: 0.1 },
+                        { label: 'Property Value', data: projections.map(p => p.propertyValue), backgroundColor: App.utils.hexToRgba(colors.strategy.valueadd, 0.4), borderColor: colors.strategy.valueadd, fill: 'start', yAxisID: 'yCurrency', order: 2, pointRadius: 0, tension: 0.1 },
+                        { label: 'Loan Balance', data: projections.map(p => p.loanBalance), backgroundColor: App.utils.hexToRgba(colors.status.dark, 0.6), borderColor: colors.status.neutral, fill: 'start', yAxisID: 'yCurrency', order: 3, pointRadius: 0, tension: 0.1 },
                         { label: 'Annual Cash Flow', data: cashFlowData, borderColor: colors.strategy.cashflow, borderWidth: 2.5, pointRadius: 3, fill: false, tension: 0.4, yAxisID: 'yCashflow', order: 1 }
                     ];
 
@@ -1953,8 +2049,8 @@
 
                     const labels = projections.map(p => `Year ${p.year}`);
                     const datasets = [
-                        { type: 'bar', label: 'Profit if Sold', data: projections.map(p => showAfterTax ? p.afterTax.profitIfSold : p.preTax.profitIfSold), backgroundColor: hexToRgba(colors.strategy.valueadd, 0.7), borderColor: colors.strategy.valueadd, borderWidth: 1, yAxisID: 'yCurrency' },
-                        { type: 'line', label: 'Annualized Return', data: projections.map(p => showAfterTax ? p.afterTax.annualizedReturn : p.preTax.annualizedReturn), borderColor: colors.strategy.appreciation, tension: 0.2, fill: false, borderWidth: 3, pointBackgroundColor: colors.strategy.appreciation, pointRadius: 4, pointHoverRadius: 7, yAxisID: 'yPercent' },
+                        { type: 'bar', label: 'Profit if Sold', data: projections.map(p => showAfterTax ? p.afterTax.profitIfSold : p.preTax.profitIfSold), backgroundColor: App.utils.hexToRgba(colors.strategy.valueadd, 0.7), borderColor: colors.strategy.valueadd, borderWidth: 1, yAxisID: 'yCurrency' },
+                        { type: 'line', label: 'Annualized Return', data: projections.map(p => showAfterTax ? p.afterTax.annualizedReturn : p.preTax.annualizedReturn), borderColor: App.utils.hexToRgba(colors.strategy.appreciation, 0.9), tension: 0.2, fill: false, borderWidth: 3, pointBackgroundColor: colors.strategy.appreciation, pointRadius: 4, pointHoverRadius: 7, yAxisID: 'yPercent' },
                         { type: 'line', label: 'Return on Equity (ROE)', data: projections.map(p => showAfterTax ? p.afterTax.roe : p.preTax.roe), borderColor: colors.strategy.cashflow, tension: 0.2, fill: false, borderWidth: 2.5, borderDash: [5,5], pointBackgroundColor: colors.strategy.cashflow, pointRadius: 3, pointHoverRadius: 6, yAxisID: 'yPercent' },
                     ];
                     
@@ -1975,7 +2071,8 @@
                             const label = `Peak Return: Year ${peakReturnIndex + 1}`;
                             ctx.font = 'bold 12px Inter, sans-serif'; ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                             ctx.textAlign = (x / chartArea.right > 0.8) ? 'right' : 'left'; ctx.textBaseline = 'middle';
-                            ctx.fillText(label, x + (ctx.textAlign === 'left' ? 5 : -5) , chartArea.top + 15);
+                            // FIX 2: Adjust "Peak Return" label position for better visibility
+                            ctx.fillText(label, x + (ctx.textAlign === 'left' ? 5 : -5) , chartArea.top - 5);
                             ctx.restore();
                         }
                     };
@@ -1986,7 +2083,11 @@
                         App.charts.optimalExit.update('none');
                     } else {
                         App.charts.optimalExit = new Chart(ctx, {
-                            data: { labels, datasets }, plugins: [optimalExitPlugin], options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                            data: { labels, datasets }, plugins: [optimalExitPlugin], 
+                            options: {
+                                responsive: true, maintainAspectRatio: false, 
+                                interaction: { mode: 'index', intersect: false },
+                                layout: { padding: { right: 15 } },
                                 scales: {
                                     yCurrency: {
                                         type: 'linear', position: 'left', title: { display: true, text: 'Total Profit ($)' },
@@ -2007,125 +2108,43 @@
                     }
                 },
 
-                updateAmortizationChart(results) {
+                // FIX: Replace entire function to correctly handle margin vs. amortizing loans
+                updateAmortizationChart({ projections, state }) {
                     const { dom, colors } = App.config;
-                    const { formatCurrency } = App.utils;
-                    const { amortizationSchedule, projections, state } = results;
+                    const { formatCurrency, hexToRgba } = App.utils;
                     const chartEl = document.getElementById(dom.charts.amortizationChart);
-                    if (!chartEl) return;
+                    if (!chartEl || projections.length === 0) return;
                     const ctx = chartEl.getContext('2d');
                     
-                    if (App.charts.amortization) {
-                        App.charts.amortization.destroy();
-                    }
+                    if (App.charts.amortization) App.charts.amortization.destroy();
                     
                     if (state.loanType === 'margin') {
                         const labels = projections.map(p => `Year ${p.year}`);
                         App.charts.amortization = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: 'Margin Loan Balance',
-                                    data: projections.map(p => p.loanBalance),
-                                    borderColor: colors.strategy.appreciation,
-                                    backgroundColor: App.utils.hexToRgba(colors.strategy.appreciation, 0.2),
-                                    fill: 'start',
-                                    tension: 0.1,
-                                }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: c => `Balance: ${formatCurrency(c.raw)}` } } }, scales: { y: { ticks: { callback: v => formatCurrency(v) } } } }
-                        });
+                            type: 'line', 
+                            data: { labels: labels, datasets: [{ label: 'Margin Loan Balance', data: projections.map(p => p.loanBalance), borderColor: colors.strategy.appreciation, backgroundColor: hexToRgba(colors.strategy.appreciation, 0.2), fill: 'start', tension: 0.1 }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `Balance: ${formatCurrency(c.raw)}` } } }, scales: { y: { ticks: { callback: v => formatCurrency(v) } } } }
+                         });
                         return;
                     }
 
-                    if (!amortizationSchedule || amortizationSchedule.length === 0) return;
-
-                    const years = Math.ceil(amortizationSchedule.length / 12);
-                    const labels = Array.from({ length: years }, (_, i) => `Year ${i + 1}`);
-                    const interestData = [], principalData = [];
-                    let crossoverMonth = -1;
-
-                    for (let i = 0; i < years; i++) {
-                        const yearSlice = amortizationSchedule.slice(i * 12, (i + 1) * 12);
-                        interestData.push(yearSlice.reduce((sum, p) => sum + p.interest, 0));
-                        principalData.push(yearSlice.reduce((sum, p) => sum + p.principal, 0));
-                    }
-
-                    const cumulativePrincipalData = principalData.map((sum => value => sum += value)(0));
-                    const cumulativeInterestData = interestData.map((sum => value => sum += value)(0));
-                    
-                    for (let i = 0; i < amortizationSchedule.length; i++) {
-                        if (amortizationSchedule[i].principal > amortizationSchedule[i].interest) {
-                            crossoverMonth = i;
-                            break;
-                        }
-                    }
-
-                    const crossoverPlugin = {
-                        id: 'crossoverLine',
-                        afterDraw: chart => {
-                            if (crossoverMonth < 0) return;
-                            const { ctx, scales, chartArea } = chart;
-                            const crossoverYearIndex = Math.floor(crossoverMonth / 12);
-                            const x = scales.x.getPixelForValue(crossoverYearIndex);
-                            if (x < chartArea.left || x > chartArea.right) return;
-                            ctx.save();
-                            ctx.beginPath(); ctx.moveTo(x, chartArea.top); ctx.lineTo(x, chartArea.bottom);
-                            ctx.lineWidth = 2; ctx.strokeStyle = '#475569'; ctx.setLineDash([6, 6]); ctx.stroke();
-                            const label = `Crossover: Mo. ${crossoverMonth + 1}`;
-                            ctx.font = 'bold 12px Inter, sans-serif'; ctx.fillStyle = '#475569';
-                            ctx.textAlign = (x / chartArea.right > 0.8) ? 'right' : 'left';
-                            ctx.fillText(label, x + (ctx.textAlign === 'left' ? 5 : -5), chartArea.top - 10);
-                            ctx.restore();
-                        }
-                    };
+                    const labels = projections.map(p => `Year ${p.year}`);
+                    const loanData = projections.map(p => p.loanBalance);
+                    const equityData = projections.map(p => p.equity);
 
                     App.charts.amortization = new Chart(ctx, {
-                        type: 'bar',
+                        type: 'line',
                         data: {
                             labels: labels,
                             datasets: [
-                                { label: 'Principal', data: principalData, backgroundColor: App.utils.hexToRgba(colors.strategy.valueadd, 0.75), cumulativeData: cumulativePrincipalData },
-                                { label: 'Interest', data: interestData, backgroundColor: App.utils.hexToRgba(colors.strategy.cashflow, 0.75), cumulativeData: cumulativeInterestData }
+                                { label: 'Equity', data: equityData, borderColor: hexToRgba(colors.strategy.valueadd, 0.8), backgroundColor: hexToRgba(colors.strategy.valueadd, 0.5), fill: true, tension: 0.1, pointRadius: 0, order: 2 },
+                                { label: 'Loan Balance', data: loanData, borderColor: hexToRgba(colors.status.neutral, 0.6), backgroundColor: hexToRgba(colors.status.neutral, 0.3), fill: true, tension: 0.1, pointRadius: 0, order: 1 }
                             ]
                         },
-                        plugins: [crossoverPlugin],
                         options: {
                             responsive: true, maintainAspectRatio: false,
-                            layout: { padding: { top: 30 } },
-                            plugins: { 
-                                legend: { position: 'bottom' }, 
-                                datalabels: { display: false }, 
-                                tooltip: { 
-                                    mode: 'index',
-                                    callbacks: {
-                                        label: (context) => {
-                                            let label = context.dataset.label || '';
-                                            if (label) { label += ': '; }
-                                            if (context.parsed.y !== null) {
-                                                label += App.utils.formatCurrency(context.parsed.y);
-                                            }
-                                            // Use the dynamic x-axis label (e.g., "Year 5") for clarity
-                                            return `${label} (for ${context.label})`;
-                                        },
-                                        footer: (tooltipItems) => {
-                                            const dataIndex = tooltipItems[0].dataIndex;
-                                            const chart = tooltipItems[0].chart;
-                                            const cumPrincipal = chart.data.datasets[0].cumulativeData[dataIndex];
-                                            const cumInterest = chart.data.datasets[1].cumulativeData[dataIndex];
-                                            return [
-                                                `Cumulative Principal: ${App.utils.formatCurrency(cumPrincipal)}`,
-                                                `Cumulative Interest: ${App.utils.formatCurrency(cumInterest)}`
-                                            ];
-                                        }
-                                    }
-                                } 
-                            },
-                            scales: {
-                                x: { stacked: true, grid: { display: false } },
-                                y: { stacked: true, ticks: { callback: v => formatCurrency(v) } }
-                            }
+                            plugins: { legend: { position: 'bottom' }, datalabels: { display: false }, tooltip: { mode: 'index', intersect: false, callbacks: { footer: (items) => { const e = items.find(i => i.dataset.label === 'Equity')?.raw || 0, l = items.find(i => i.dataset.label === 'Loan Balance')?.raw || 0; return `Total Property Value: ${formatCurrency(e + l, 0)}`; } } } },
+                            scales: { x: { grid: { display: false } }, y: { stacked: true, ticks: { callback: v => formatCurrency(v) }, title: { display: true, text: 'Total Property Value' } } }
                         }
                     });
                 },
@@ -2835,7 +2854,7 @@
                     {g:'Loan', d:{'Loan Type':S.cell(state.loanType), 'Down Payment':S.cell(state.downPayment/100, ['percent']), 'Interest Rate':S.cell(state.interestRate/100, ['percent']), 'Loan Term (Years)':S.cell(state.loanTerm, ['number'])}},
                     {g:'Income', d:{'Gross Monthly Rent':S.cell(state.grossMonthlyRent, ['currency']), 'Other Monthly Income':S.cell(state.otherIncome, ['currency']), 'Annual Income Growth':S.cell(state.annualIncomeGrowth/100, ['percent'])}},
                     {g:'Expenses', d:{'Property Taxes ($/mo)':S.cell(state.propTaxes, ['currency']), 'Insurance ($/mo)':S.cell(state.insurance, ['currency']), 'HOA ($/mo)':S.cell(state.hoa, ['currency']), 'Vacancy':S.cell(state.vacancyPct/100, ['percent']), 'Repairs & Maint.':S.cell(state.maintenancePct/100, ['percent']), 'Property Management':S.cell(state.managementPct/100, ['percent']), 'Capital Expenditures':S.cell(state.capExPct/100, ['percent']), 'Annual Expense Growth':S.cell(state.annualExpenseGrowth/100, ['percent'])}},
-                    {g:'Tax & Sale', d:{'Marginal Tax Rate':S.cell(state.marginalTaxRate/100, ['percent']), 'Capital Gains Rate':S.cell(state.capitalGainsTaxRate/100, ['percent']), 'Selling Costs':S.cell(state.salesExpensesPct/100, ['percent']), 'Hold Period (Years)':S.cell(state.holdPeriod, ['number']), 'Annual Value Growth':S.cell(state.annualValueGrowth/100, ['percent'])}},
+                    {g:'Tax & Projections', d:{'Marginal Tax Rate':S.cell(state.marginalTaxRate/100, ['percent']), 'Capital Gains Rate':S.cell(state.capitalGainsTaxRate/100, ['percent']),'Land Value %':S.cell(state.landValuePct/100, ['percent']), 'Selling Costs':S.cell(state.salesExpensesPct/100, ['percent']), 'Hold Period (Years)':S.cell(state.holdPeriod, ['number']), 'Annual Value Growth':S.cell(state.annualValueGrowth/100, ['percent']), 'S&P 500 Expected Return': S.cell(state.sp500Return/100, ['percent'])}},
                 ];
                 inputs.forEach(group => {
                     merges.push({ s: { r: data.length, c: 0 }, e: { r: data.length, c: 1 } });
@@ -2878,7 +2897,7 @@
                  const saleCosts = finalYear.propertyValue * (state.salesExpensesPct / 100);
                  const preTaxProfitOnSale = finalYear.propertyValue - saleCosts - finalYear.loanBalance;
                  const totalGain = finalYear.propertyValue - saleCosts - state.purchasePrice;
-                 const depreciationRecapture = finalYear.year * (state.purchasePrice * 0.8 / 27.5);
+                 const depreciationRecapture = finalYear.year * (state.purchasePrice * (1 - state.landValuePct / 100) / 27.5); // FIX: Use landValuePct for XLSX export
                  const taxOnSale = (depreciationRecapture * (state.marginalTaxRate/100)) + (Math.max(0, totalGain - depreciationRecapture) * (state.capitalGainsTaxRate/100));
 
                 const sale = [
