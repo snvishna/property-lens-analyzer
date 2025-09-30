@@ -4,8 +4,6 @@ A professional-grade, all-in-one tool for real estate investors that runs entire
 
 [**Live Demo →**](https://nivas.homes/calculators/property-lens)
 
-
-
 ---
 
 ## 🤔 Why PropertyLens?
@@ -80,6 +78,24 @@ This is the new heart of the application, designed to give you a clear, final an
 * **Total After-Tax Profit:** The absolute amount of money in your pocket at the end of the hold period after every single cost and tax has been paid.
 * **MoIC (Multiple on Invested Capital):** An intuitive metric answering, "How many times did I get my money back?" Calculated as (Total Cash Returned / Total Capital Invested). A MoIC of 2.5x means you received $2.50 for every $1 you put in.
 * **Total Capital Invested:** The total out-of-pocket cash required over the entire hold period. This includes your initial investment plus any capital needed to cover years with negative cash flow.
+
+### ➤ Interpreting the Showdown: Rate vs. Amount
+
+A common question when looking at the "Investment Showdown" is: **how can the property have a higher total profit but a lower IRR (annualized return) than the S&P 500?** This hits on a subtle but crucial concept in investment analysis.
+
+Think of it like two runners in a race:
+
+* 💰 **Total Profit** is the **total distance** each runner covered. The Property runner might cover more ground.
+* 📈 **IRR (Annualized Return)** is the **average speed** of each runner. The S&P 500 runner might have a higher average speed.
+
+The question becomes, "How did the slower runner cover more ground?" The answer lies in the concept of **Total Capital Invested**.
+
+* **The S&P 500 Investment (Simple & Efficient):** This is a simple "lump sum" investment. An initial amount of capital is invested on Day 1, and no more money is ever needed. It compounds efficiently from a fixed capital base.
+* **The Real Estate Investment (Complex & Capital Intensive):** A rental property is rarely a simple "lump sum" investment. In some years, especially at the beginning, the after-tax cash flow may be negative. To cover these losses, you have to contribute **more capital** out-of-pocket.
+
+The `Total Capital Invested` metric correctly accounts for this by adding your initial investment and any subsequent contributions. Because the denominator for the property's return calculation can be larger, its calculated *rate* of return (IRR) can be lower, even if the final profit (the numerator) is higher.
+
+This is a perfect illustration of why looking at a single metric is never enough. PropertyLens shows you both the **rate (IRR)** and the **amount (Total Profit)** because they tell you different, and equally valid, parts of the story.
 
 #### Metrics from "Building Equity Over Time" Chart
 

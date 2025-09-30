@@ -1306,17 +1306,26 @@
                             </div>
                             <div id="showdownVerdict" class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800">
                             </div>
-                             <div class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                <h3 class="font-semibold text-slate-800">Property Viability Checklist <span class="text-slate-500 font-normal">(Year 1, Pre-Tax)</span></h3>
-                                <p class="mt-1 text-xs text-slate-500">A simple GO/NO-GO check against your criteria for the property itself.</p>
-                                <span id="verdictText" class="hidden"></span>
-                                <ul id="verdictChecklist" class="mt-3 space-y-2 text-slate-700 text-sm"></ul>
+                            <div class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div>
+                                        <h3 class="font-semibold text-slate-800">Property Viability Checklist</h3>
+                                        <p class="text-xs text-slate-500">Compares Year 1 pre-tax results to your criteria.</p>
+                                    </div>
+                                    <span id="verdictBadge" class="text-lg font-bold px-3 py-1 rounded-md"></span>
+                                </div>
+                                <ul id="verdictChecklist" class="space-y-2 text-slate-700 text-sm"></ul>
                             </div>
                         </div>
 
                         <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
                             <h2 class="text-2xl font-semibold text-slate-900 mb-4">Key Metrics (Year 1)</h2>
                             <div id="key-metrics-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                                <div data-metric="cashReserves" class="p-4 rounded-lg">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="A recommended safety net to cover 6 months of core housing expenses (Principal, Interest, Taxes, and Insurance) in case of vacancy or unexpected issues.">Cash Reserves <span class="help-icon">?</span></span></p>
+                                    <p id="cashReserves" class="metric-value text-lg font-semibold"></p>
+                                    <p id="cashReservesBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
                                  <div data-metric="afterTaxMonthlyCashFlow" class="p-4 rounded-lg">
                                     <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The money left over each month after all expenses AND income taxes have been paid. This is your true take-home profit. Because of tax deductions like depreciation, this can sometimes be higher than your pre-tax cash flow.">After-Tax Cash Flow <span class="help-icon">?</span></span></p>
                                     <p id="afterTaxMonthlyCashFlow" class="metric-value text-3xl font-bold"></p>
@@ -1577,51 +1586,82 @@
                     const { formatCurrency, formatPercent } = App.utils;
                     const { metrics, shared, state, sp500, projections } = results;
                     const { verdict } = shared;
-                    
-                    const verdictTextEl = document.getElementById(dom.outputs.verdictText);
-                    if (verdictTextEl) {
-                        verdictTextEl.textContent = verdict.isGo ? 'GO' : 'NO-GO';
-                        verdictTextEl.className = `font-bold text-2xl ${verdict.isGo ? 'text-green-600' : 'text-red-600'}`;
+
+                    // --- 1. Handle the well-styled Viability Checklist ---
+                    const badgeEl = document.getElementById('verdictBadge');
+                    const checklistEl = document.getElementById('verdictChecklist');
+
+                    if (badgeEl && checklistEl) {
+                        // Set the main verdict badge
+                        if (verdict.isGo) {
+                            badgeEl.textContent = 'GO';
+                            badgeEl.className = 'text-lg font-bold px-3 py-1 rounded-md bg-green-100 text-green-800';
+                        } else {
+                            badgeEl.textContent = 'NO-GO';
+                            badgeEl.className = 'text-lg font-bold px-3 py-1 rounded-md bg-red-100 text-red-800';
+                        }
+
+                        // Define the checklist items
+                        const checklistItems = [
+                            { label: 'Forced Equity', rule: `≥ ${formatCurrency(state.minForcedEquity)}`, actual: formatCurrency(shared.forcedEquity), pass: verdict.forcedEquityPass },
+                            { label: 'Pre-Tax CF', rule: `≥ ${formatCurrency(state.minCashFlow)}/mo`, actual: formatCurrency(metrics.preTax.monthlyCashFlow), pass: verdict.cashFlowPass },
+                            { label: 'Pre-Tax CoC', rule: `≥ ${state.minCocRoi}%`, actual: formatPercent(metrics.preTax.cocRoi), pass: verdict.cocPass },
+                            { label: 'DSCR', rule: `≥ ${state.lenderDscrReq.toFixed(2)}`, actual: shared.dscr.toFixed(2), pass: verdict.dscrPass }
+                        ];
+
+                        // Generate the HTML for the list
+                        checklistEl.innerHTML = checklistItems.map(item => {
+                            const icon = item.pass
+                                ? `<svg class="w-5 h-5 text-green-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
+                                : `<svg class="w-5 h-5 text-red-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                            return `
+                                <li class="flex items-center justify-between p-2 rounded-md transition-colors hover:bg-slate-100">
+                                    <div class="flex items-center gap-2">
+                                        ${icon}
+                                        <span class="font-medium text-slate-800">${item.label}</span>
+                                        <span class="text-xs text-slate-500">${item.rule}</span>
+                                    </div>
+                                    <span class="font-semibold ${item.pass ? 'text-slate-900' : 'text-red-700'}">${item.actual}</span>
+                                </li>`;
+                        }).join('');
                     }
 
-                    const check = (pass) => {
-                        if (pass) {
-                            return `<svg class="w-5 h-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-                        } else {
-                            return `<svg class="w-5 h-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-                        }
-                    };
-                    
-                    const verdictChecklistEl = document.getElementById(dom.outputs.verdictChecklist);
-                    if (verdictChecklistEl) {
-                        verdictChecklistEl.innerHTML = `<div class="max-w-md mx-auto space-y-2.5">
-                        <li class="flex justify-between items-center">${check(verdict.forcedEquityPass)} <span>Forced Equity ≥ ${formatCurrency(state.minForcedEquity)}</span> <span class="font-semibold">${formatCurrency(shared.forcedEquity)}</span></li>
-                        <li class="flex justify-between items-center">${check(verdict.cashFlowPass)} <span>Pre-Tax CF ≥ ${formatCurrency(state.minCashFlow)}</span> <span class="font-semibold">${formatCurrency(metrics.preTax.monthlyCashFlow)}</span></li>
-                        <li class="flex justify-between items-center">${check(verdict.cocPass)} <span>Pre-Tax CoC ≥ ${state.minCocRoi}%</span> <span class="font-semibold">${formatPercent(metrics.preTax.cocRoi)}</span></li>
-                        <li class="flex justify-between items-center">${check(verdict.dscrPass)} <span>DSCR ≥ ${state.lenderDscrReq.toFixed(2)}</span> <span class="font-semibold">${shared.dscr.toFixed(2)}</span></li>
-                        `;
-                    }
-                    
+                    // --- 2. Correctly Calculate IRR and Showdown Metrics (with bug fix) ---
                     const finalYear = projections[projections.length - 1];
-                    const saleProceeds = finalYear.propertyValue - (finalYear.propertyValue * (state.salesExpensesPct / 100)) - finalYear.loanBalance - finalYear.taxImpact;
-                    const propertyCashFlows = [ -shared.totalCashNeeded, ...projections.map(p => p.afterTax.cashFlow) ];
-                    propertyCashFlows[propertyCashFlows.length - 1] += saleProceeds;
+                    const salePrice = finalYear.propertyValue;
+                    const sellingCosts = salePrice * (state.salesExpensesPct / 100);
+                    const loanPayoff = finalYear.loanBalance;
+                    const totalDepreciation = finalYear.year * (state.purchasePrice * (1 - state.landValuePct / 100) / 27.5);
+                    const capitalGain = salePrice - sellingCosts - state.purchasePrice;
+                    const depreciationRecapture = Math.min(Math.max(0, capitalGain), totalDepreciation);
+                    const appreciationGain = capitalGain - depreciationRecapture;
+                    const taxOnRecapture = depreciationRecapture * (state.marginalTaxRate / 100);
+                    const taxOnAppreciation = appreciationGain > 0 ? appreciationGain * (state.capitalGainsTaxRate / 100) : 0;
+                    const totalTaxOnSale = taxOnRecapture + taxOnAppreciation;
+                    const netCashFromSale = salePrice - sellingCosts - loanPayoff - totalTaxOnSale;
+                    const initialCashNeeded = shared.totalCashNeeded;
+                    const cumulativeCashFlows = projections.map(p => p.afterTax.cumulativeCashFlow);
+                    const lowestCumulativeCashFlow = Math.min(0, ...cumulativeCashFlows);
+                    const additionalCapitalContributions = Math.abs(lowestCumulativeCashFlow < 0 ? lowestCumulativeCashFlow : 0);
+                    const propertyTotalCapital = initialCashNeeded + additionalCapitalContributions;
+                    const allCashFlowsExceptLast = projections.slice(0, -1).map(p => p.afterTax.cashFlow);
+                    const finalYearTotalInflow = finalYear.afterTax.cashFlow + netCashFromSale;
+                    const propertyCashFlows = [ -initialCashNeeded, ...allCashFlowsExceptLast, finalYearTotalInflow ];
 
                     const propertyIRR = App.calculator.calculateIRR(propertyCashFlows) || 0;
                     const propertyMoIC = App.calculator.calculateMoIC(propertyCashFlows) || 0;
                     const propertyProfit = finalYear.afterTax.profitIfSold;
-                    const propertyTotalCapital = Math.abs(propertyCashFlows.filter(cf => cf < 0).reduce((sum, cf) => sum + cf, 0));
-
                     const sp500CashFlows = [-shared.totalCashNeeded, ...Array(state.holdPeriod - 1).fill(0), sp500.finalValue];
                     const sp500IRR = App.calculator.calculateIRR(sp500CashFlows) || 0;
                     const sp500MoIC = App.calculator.calculateMoIC(sp500CashFlows) || 0;
 
+                    // --- 3. Populate the Investment Showdown Table & Verdict ---
                     const showdownTableBody = document.getElementById('showdownTableBody');
                     if (showdownTableBody) {
                         const createRow = (metric, propValue, spValue, formatter, helpText) => {
                             const propWin = propValue > spValue;
                             const spWin = spValue > propValue;
-                            return `<tr class="text-base"><td class="px-4 py-3 font-semibold text-slate-800"><span class="tooltip-container" data-tooltip="${helpText}">${metric}<span class="help-icon" data-tooltip="${helpText}">?</span></span></td><td class="px-4 py-2 text-center text-lg font-bold ${propWin ? 'text-green-600' : ''}">${formatter(propValue)}</td><td class="px-4 py-2 text-center text-lg font-bold ${spWin ? 'text-green-600' : ''}">${formatter(spValue)}</td></tr>`;
+                            return `<tr class="text-base"><td class="px-4 py-3 font-semibold text-slate-800"><span class="tooltip-container" data-tooltip="${helpText}">${metric}<span class="help-icon">?</span></span></td><td class="px-4 py-2 text-center text-lg font-bold ${propWin ? 'text-green-600' : ''}">${formatter(propValue)}</td><td class="px-4 py-2 text-center text-lg font-bold ${spWin ? 'text-green-600' : ''}">${formatter(spValue)}</td></tr>`;
                         };
                         showdownTableBody.innerHTML = 
                             createRow('IRR (Internal Rate of Return)', propertyIRR, sp500IRR, v => formatPercent(v), "The 'true' annualized return, considering all cash flows over time. This is the best metric for an apples-to-apples comparison.") +
@@ -1810,6 +1850,7 @@
                     this._setMetric('noi', formatCurrency(shared.noi), `${formatCurrency(shared.effectiveMonthlyIncome*12,0)} - ${formatCurrency(shared.monthlyOpEx*12,0)}`);
                     this._setMetric('capRate', formatPercent(shared.capRate), `${formatCurrency(shared.noi,0)} / ${formatCurrency(state.purchasePrice,0)}`);
                     this._setMetric('totalCashNeeded', formatCurrency(shared.totalCashNeeded), `${formatCurrency(shared.downPaymentAmount, 0)} + ${formatCurrency(state.closingCosts, 0)} + ${formatCurrency(state.rehabCosts, 0)}`);
+                    this._setMetric('cashReserves', formatCurrency(shared.cashReserves, 0), `6mo of P+I+T+I`);
                     this._setMetric('forcedEquity', formatCurrency(shared.forcedEquity), `${formatCurrency(state.arv,0)} - ${formatCurrency(state.purchasePrice + state.closingCosts + state.rehabCosts,0)}`);
                     this._setMetric('dscr', shared.dscr.toFixed(2), `${formatCurrency(shared.noi,0)} / ${formatCurrency(shared.annualDebtService,0)}`);
                     this._setMetric('grm', shared.grm.toFixed(2), `${formatCurrency(state.purchasePrice,0)} / ${formatCurrency(state.grossMonthlyRent * 12,0)}`);
