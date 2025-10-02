@@ -662,23 +662,25 @@
                     outputs: {
                         outputContainer: 'output-container',
                         appHeader: 'appHeader', showdownCard: 'showdownCard', verdictText: 'verdictText', verdictChecklist: 'verdictChecklist',
-                        monthlyCashFlow: 'monthlyCashFlow', projectionsTable: 'projectionsTable',
-                        cocRoi: 'cocRoi',
-                        projectionsTable: 'projectionsTable',
-                        afterTaxMonthlyCashFlow: 'afterTaxMonthlyCashFlow', afterTaxCocRoi: 'afterTaxCocRoi',
-                        noi: 'noi',
-                        capRate: 'capRate',
-                        dscr: 'dscr',
-                        totalCashNeeded: 'totalCashNeeded',
-                        fiftyPercentRule: 'fiftyPercentRule',
-                        debtYield: 'debtYield',
-                        ltvLtc: 'ltvLtc',
-                        cashReserves: 'cashReserves',
-                        propertyAnnualizedReturn: 'propertyAnnualizedReturn', sp500AnnualizedReturn: 'sp500AnnualizedReturn',
-                        expenseLegend: 'expenseLegend',
-                        profitBreakdownSummary: 'profitBreakdownSummary',
-                        grm: 'grm',
-                        forcedEquity: 'forcedEquity',
+                        // Dynamic Headline Metrics
+                        headlineCashFlow: 'headlineCashFlow', 
+                        headlineRoi: 'headlineRoi',
+                        cashFlowTypeLabel: 'cashFlowTypeLabel',
+                        cashFlowPeriodLabel: 'cashFlowPeriodLabel',
+                        roiTypeLabel: 'roiTypeLabel',
+                        roiPeriodLabel: 'roiPeriodLabel',
+                        // Fixed Metrics
+                        cashReserves: 'cashReserves', noi: 'noi', capRate: 'capRate', dscr: 'dscr', totalCashNeeded: 'totalCashNeeded',
+                        forcedEquity: 'forcedEquity', debtYield: 'debtYield', ltvLtc: 'ltvLtc', 
+                        averageRoe: 'averageRoe', 
+                        // Quick Ratios
+                        fiftyPercentRule: 'fiftyPercentRule', grm: 'grm', onePercentRule: 'onePercentRule',
+                        projectionsTable: 'projectionsTable', expenseLegend: 'expenseLegend', profitBreakdownSummary: 'profitBreakdownSummary',
+                        analysisOverTimeContainer: 'analysisOverTimeContainer',
+                        analysisChartContainer: 'analysisChartContainer',
+                        projectionsChart: 'projectionsChart',
+                        projectionsChartToggle: 'projectionsChartToggle',
+                        projectionsDataSelector: 'projectionsDataSelector',
                     },
                     groups: {
                         fixedRateGroup: 'fixedRateGroup', armRateGroup: 'armRateGroup', marginLoanGroup: 'marginLoanGroup',
@@ -694,7 +696,10 @@
                     toggles: {
                         wealthChartToggle: 'wealthChartToggle',
                         exitChartToggle: 'exitChartToggle',
-                        breakdownToggle: 'breakdownToggle'
+                        breakdownToggle: 'breakdownToggle',
+                        timeHorizonToggle: 'timeHorizonToggle',
+                        taxStatusToggle: 'taxStatusToggle',
+                        projectionsChartToggle: 'projectionsChartToggle',
                     }
                 },
                 defaults: {
@@ -712,6 +717,12 @@
                     cashflow: { minCashFlow: 200, minCocRoi: 8, minForcedEquity: 0 },
                     valueadd: { minCashFlow: 0, minCocRoi: 0, minForcedEquity: 20000 },
                     appreciation: { minCashFlow: -100, minCocRoi: 0, minForcedEquity: 0 },
+                },
+                // NEW: Define strategyHighlights object
+                strategyHighlights: {
+                    cashflow: ['totalCashNeeded', 'noi', 'capRate', 'averageRoe'],
+                    valueadd: ['totalCashNeeded', 'forcedEquity', 'dscr', 'debtYield'],
+                    appreciation: ['noi', 'capRate', 'averageRoe', 'grm'], 
                 },
                 colors: {
                     strategy: { cashflow: '#1565C0', valueadd: '#2E7D32', appreciation: '#6A1B9A' },
@@ -877,6 +888,9 @@
                     const interestRate = state.loanType.startsWith('fixed') ? state.interestRate : state.loanType.startsWith('arm') ? state.initialInterestRate : state.marginInterestRate;
                     const monthlyInterestRate = (interestRate / 100) / 12;
 
+                    // FIX: Declare y1Interest here to prevent ReferenceError
+                    let y1Interest = 0; 
+                    
                     if (state.loanType !== 'margin') {
                          results.shared.loanTermMonths = state.loanTerm * 12;
                          results.shared.monthlyPI = this.calculatePi(results.shared.loanAmount, monthlyInterestRate, results.shared.loanTermMonths);
@@ -884,28 +898,44 @@
                          results.shared.cashReserves = (results.shared.monthlyPI + state.propTaxes + state.insurance) * 6;
                         results.shared.annualDebtService = results.shared.monthlyPI * 12;
                         results.metrics.preTax.monthlyCashFlow = monthlyNOI - results.shared.monthlyPI;
-                    } else { // FIX: Correct Margin Loan logic for Year 1
-                        const monthlyInterest = results.shared.loanAmount * monthlyInterestRate;
-                        const profitAfterInterest = monthlyNOI - monthlyInterest;
-                        const excessProfitForRepayment = Math.max(0, profitAfterInterest - state.minCashFlow);
+
+                        // Calculate Year 1 Interest for Fixed/ARM Loans
+                        let bal = results.shared.loanAmount;
+                        for (let m=0; m<12; m++) {
+                            const interest = bal * monthlyInterestRate;
+                            y1Interest += interest;
+                            const principal = results.shared.monthlyPI - interest;
+                            bal -= principal;
+                        }
+
+                    } else { // Margin Loan (Interest Only + Investor-Driven Paydown)
+                        results.shared.monthlyInterestOnly = results.shared.loanAmount * monthlyInterestRate;
+                        results.shared.monthlyMinDebtService = results.shared.monthlyInterestOnly; // Minimum required payment
+                        
+                        // Investor-Driven Paydown Logic for Year 1:
+                        const profitAfterMinDebt = monthlyNOI - results.shared.monthlyMinDebtService;
+                        // Use MinCashFlow as the threshold for 'excess profit'
+                        const excessProfitForRepayment = Math.max(0, profitAfterMinDebt - (state.minCashFlow / 12)); // Divide annual target by 12
                         const principalRepayment = excessProfitForRepayment * (state.marginRepaymentPct / 100);
-                        const totalDebtService = monthlyInterest + principalRepayment;
-                        results.shared.monthlyPI = totalDebtService; 
-                        results.shared.expenseBreakdown = { 'Interest': monthlyInterest, 'Principal Paydown': principalRepayment, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
-                        results.shared.cashReserves = (monthlyInterest + state.propTaxes + state.insurance) * 6;
-                        results.shared.annualDebtService = totalDebtService * 12;
-                        results.metrics.preTax.monthlyCashFlow = monthlyNOI - totalDebtService;
-                        results.shared.loanTermMonths = state.loanTerm * 12;
-                        results.shared.monthlyPI = this.calculatePi(results.shared.loanAmount, monthlyInterestRate, results.shared.loanTermMonths);
-                        results.shared.expenseBreakdown = { 'P&I': results.shared.monthlyPI, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
-                        results.shared.cashReserves = (results.shared.monthlyPI + state.propTaxes + state.insurance) * 6;
+                        
+                        results.shared.monthlyPI = results.shared.monthlyMinDebtService + principalRepayment; // Actual payment made
+                        y1Interest = results.shared.monthlyInterestOnly * 12; // Year 1 interest is fixed at monthly interest * 12
+                        
+                        results.shared.expenseBreakdown = { 'Interest': results.shared.monthlyMinDebtService, 'Principal Paydown': principalRepayment, 'Taxes': state.propTaxes, 'Insurance': state.insurance, 'Vacancy': vacancyAmount, 'Maintenance': maintenanceAmount, 'Management': managementAmount, 'CapEx': capExAmount, 'HOA': state.hoa, 'Other': state.otherExpenses };
+                        
+                        results.shared.cashReserves = (results.shared.monthlyMinDebtService + state.propTaxes + state.insurance) * 6;
+                        results.shared.annualDebtService = results.shared.monthlyMinDebtService * 12; // Use MINIMUM Debt Service (Interest Only) for DSCR
+                        
+                        results.metrics.preTax.monthlyCashFlow = monthlyNOI - results.shared.monthlyPI; // Actual cash flow includes voluntary paydown
                     }
                     
                     results.metrics.preTax.annualCashFlow = results.metrics.preTax.monthlyCashFlow * 12;
                     results.metrics.preTax.cocRoi = results.shared.totalCashNeeded > 0 ? results.metrics.preTax.annualCashFlow / results.shared.totalCashNeeded : (results.metrics.preTax.annualCashFlow > 0 ? Infinity : -Infinity);
                     
                     results.shared.capRate = state.purchasePrice > 0 ? results.shared.noi / state.purchasePrice : 0;
-                    results.shared.dscr = results.shared.annualDebtService > 0 ? results.shared.noi / results.shared.annualDebtService : (results.shared.noi > 0 ? Infinity : -Infinity);
+                    // DSCR calculation uses annual NOI and annual MINIMUM debt service (P&I or Interest Only)
+                    const annualMinDebtService = results.shared.annualDebtService; 
+                    results.shared.dscr = annualMinDebtService > 0 ? results.shared.noi / annualMinDebtService : (results.shared.noi > 0 ? Infinity : -Infinity);
                     results.shared.grm = (state.grossMonthlyRent * 12) > 0 ? state.purchasePrice / (state.grossMonthlyRent * 12) : 0;
                     results.shared.debtYield = results.shared.loanAmount > 0 ? results.shared.noi / results.shared.loanAmount : 0;
                     results.shared.ltv = state.purchasePrice > 0 ? results.shared.loanAmount / state.purchasePrice : 0;
@@ -916,12 +946,8 @@
 
                     const depreciableBasis = state.purchasePrice * (1 - state.landValuePct / 100);
                     const annualDepreciation = depreciableBasis / 27.5;
-                    let y1Interest = 0; let bal = results.shared.loanAmount;
-                    for (let m=0; m<12; m++) {
-                        const interest = bal * monthlyInterestRate;
-                        y1Interest += interest;
-                        bal -= (results.shared.monthlyPI - interest);
-                    }
+                    
+                    // Use calculated Y1 Interest (y1Interest) for tax calculation
                     const taxableIncome = results.shared.noi - y1Interest - annualDepreciation;
                     const taxImpact = taxableIncome * (state.marginalTaxRate / 100);
                     results.metrics.afterTax.annualCashFlow = results.metrics.preTax.annualCashFlow - taxImpact;
@@ -943,6 +969,17 @@
                     results.sp500 = this.calculateSp500EquivalentReturn(state.holdPeriod, results.shared.totalCashNeeded, state.capitalGainsTaxRate, state.sp500Return);
                     
                     if (results.projections.length > 0) {
+                        // NEW: Calculate Average Annualized Return on Equity (ROE) over the hold period
+                        const roeSum = results.projections.reduce((sum, p) => {
+                            // Only include years where starting equity is > 0 and ROE is a valid number
+                            if (p.equityAtStartOfYear > 0 && isFinite(p.afterTax.roe)) {
+                                return sum + p.afterTax.roe;
+                            }
+                            return sum;
+                        }, 0);
+                        const validRoeYears = results.projections.filter(p => p.equityAtStartOfYear > 0 && isFinite(p.afterTax.roe)).length;
+                        results.shared.averageRoe = validRoeYears > 0 ? roeSum / validRoeYears : 0;
+                        
                         const finalYear = results.projections[results.projections.length - 1];
                         const salePrice = finalYear.propertyValue;
                         const sellingCosts = salePrice * (state.salesExpensesPct / 100);
@@ -976,7 +1013,7 @@
                     } else {
                         results.shared.longTermReturn = 0;
                         results.shared.returnWaterfall = { appreciation: 0, loanPaydown: 0, cashFlow: 0 };
-                    }
+                    }   
                     
                     results.state = state;
                     return results;
@@ -1037,14 +1074,22 @@
                             annualInterestPaid += interest;
 
                             if (state.loanType === 'margin') {
-                                // FIX: Correct margin loan principal/interest logic in projection loop
-                                const profitAfterInterest = monthlyNOI - interest;
-                                const excessProfitForRepayment = Math.max(0, profitAfterInterest - state.minCashFlow);
+                                // Margin Loan: Interest Only + Investor-Driven Paydown from excess profit
+                                const monthlyMinDebtService = interest;
+                                
+                                // Cash Flow AFTER required debt service (Interest Only)
+                                const profitAfterMinDebt = monthlyNOI - monthlyMinDebtService; 
+                                
+                                // Investor's defined threshold for 'excess' profit
+                                const excessProfitForRepayment = Math.max(0, profitAfterMinDebt - (state.minCashFlow / 12)); // Divide annual target by 12
+                                
                                 const principalPaid = excessProfitForRepayment * (state.marginRepaymentPct / 100);
-                                monthlyPI = interest + principalPaid;
+                                monthlyPI = monthlyMinDebtService + principalPaid;
                                 loanBalance -= principalPaid;
                             } else {
+                                // Amortizing Loans (Fixed/ARM)
                                 const remainingTerm = (state.loanTerm * 12) - ((year - 1) * 12 + (month - 1));
+                                // This uses the correct remaining term to calculate PI for accurate principal paydown
                                 monthlyPI = this.calculatePi(loanBalance, currentMonthlyInterestRate, remainingTerm);
                                 const principal = monthlyPI - interest;
                                 loanBalance -= principal;
@@ -1373,6 +1418,8 @@
                     if (outputContainer && !document.getElementById(App.config.dom.outputs.showdownCard)) {
                         this.renderInitialOutputLayout(outputContainer);
                     }
+                    // NEW: Ensure the selector is populated when results arrive
+                    this.renderProjectionsDataSelector();
                     this.updateVerdict(results);
                     this.updateStrategicInsights(results);
                     this.updateKeyMetrics(results);
@@ -1389,225 +1436,415 @@
                     }, 0);
                 },
 
+                renderProjectionsDataSelector() {
+                    const selector = document.getElementById(App.config.dom.outputs.projectionsDataSelector);
+                    if (!selector) return;
+
+                    const dataFields = [
+                        { key: 'propertyValue', label: 'Prop. Value', currency: true, rate: false, defaultSelected: true, color: App.config.colors.strategy.valueadd },
+                        { key: 'equity', label: 'Total Equity', currency: true, rate: false, defaultSelected: false, color: App.utils.hexToRgba(App.config.colors.strategy.valueadd, 0.7) },
+                        { key: 'loanBalance', label: 'Loan Balance', currency: true, rate: false, defaultSelected: false, color: App.config.colors.status.dark },
+                        { key: 'afterTax.cashFlow', label: 'After-Tax CF', currency: true, rate: false, defaultSelected: true, color: App.config.colors.strategy.cashflow },
+                        { key: 'preTax.cashFlow', label: 'Pre-Tax CF', currency: true, rate: false, defaultSelected: false, color: App.utils.hexToRgba(App.config.colors.strategy.cashflow, 0.5) },
+                        { key: 'afterTax.roe', label: 'Return on Equity (ROE)', currency: false, rate: true, defaultSelected: false, color: App.config.colors.strategy.appreciation },
+                        { key: 'afterTax.annualizedReturn', label: 'Annualized Return (IRR)', currency: false, rate: true, defaultSelected: false, color: App.config.colors.chart.primary[4] },
+                        { key: 'annualNOI', label: 'Annual NOI', currency: true, rate: false, defaultSelected: false, color: App.config.colors.chart.primary[5] },
+                        { key: 'annualInterestPaid', label: 'Interest Paid', currency: true, rate: false, defaultSelected: false, color: App.config.colors.chart.primary[6] },
+                        { key: 'taxImpact', label: 'Tax Impact', currency: true, rate: false, defaultSelected: false, color: App.config.colors.chart.primary[7] },
+                    ];
+
+                    // Cache for use in the chart update function
+                    this._projectionsDataFields = dataFields; 
+                    
+                    if (selector.options.length === 0) {
+                        selector.innerHTML = dataFields.map(f => 
+                            `<option value="${f.key}" data-currency="${f.currency}" data-rate="${f.rate}" style="color: ${f.color}" ${f.defaultSelected ? 'selected' : ''}>${f.label}</option>`
+                        ).join('');
+                    }
+                },
+
+                updateProjectionsChart(results) {
+                    const { projections } = results;
+                    const selector = document.getElementById(App.config.dom.outputs.projectionsDataSelector);
+                    const chartEl = document.getElementById(App.config.dom.outputs.projectionsChart);
+                    if (!selector || !chartEl || !projections || projections.length === 0) return;
+                    const ctx = chartEl.getContext('2d');
+                    
+                    if (App.charts.projections) App.charts.projections.destroy();
+                    
+                    const labels = projections.map(p => `Year ${p.year}`);
+                    const selectedOptions = Array.from(selector.options).filter(opt => opt.selected);
+                    
+                    // Helper to safely get nested property value
+                    const getValue = (obj, path) => {
+                        return path.split('.').reduce((o, i) => (o ? o[i] : 0), obj);
+                    };
+
+                    const datasets = selectedOptions.map((opt, i) => {
+                        const isRate = opt.dataset.rate === 'true';
+                        const field = this._projectionsDataFields.find(f => f.key === opt.value);
+                        
+                        return {
+                            label: opt.text,
+                            data: projections.map(p => getValue(p, opt.value)),
+                            borderColor: field ? field.color : App.config.colors.chart.primary[i],
+                            backgroundColor: field ? App.utils.hexToRgba(field.color, 0.2) : App.config.colors.chart.primary[i],
+                            yAxisID: isRate ? 'yRate' : 'yCurrency',
+                            type: 'line',
+                            fill: false,
+                            tension: 0.2,
+                            borderWidth: 3,
+                            pointRadius: 3
+                        };
+                    });
+
+                    App.charts.projections = new Chart(ctx, {
+                        type: 'line', 
+                        data: { labels, datasets }, 
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { 
+                                legend: { position: 'bottom', labels: { usePointStyle: true, boxHeight: 8 } }, 
+                                datalabels: { display: false },
+                                tooltip: { 
+                                    mode: 'index', 
+                                    intersect: false, 
+                                    callbacks: { 
+                                        label: c => {
+                                            const isRate = c.dataset.yAxisID === 'yRate';
+                                            return `${c.dataset.label}: ${isRate ? App.utils.formatPercent(c.raw) : App.utils.formatCurrency(c.raw, 0)}`;
+                                        }
+                                    } 
+                                }
+                            }, 
+                            scales: {
+                                x: { grid: { display: false } },
+                                yCurrency: {
+                                    type: 'linear', position: 'left', title: { display: true, text: 'Value ($)' },
+                                    ticks: { callback: v => App.utils.formatCurrency(v, 0) },
+                                    grid: { color: '#e5e7eb' }, 
+                                },
+                                yRate: {
+                                    type: 'linear', position: 'right', title: { display: true, text: 'Rate (%)' },
+                                    ticks: { callback: v => App.utils.formatPercent(v, 0) },
+                                    grid: { drawOnChartArea: false }, 
+                                }
+                            }
+                        }
+                    });
+                },
+
                 renderInitialOutputLayout(container) {
                      container.innerHTML = `
-                        <div id="showdownCard" class="p-6 bg-white rounded-xl shadow-sm border-2 border-slate-200" style="border-color: var(--strategy-color);">
-                            <h2 class="text-2xl font-bold text-slate-900">Investment Showdown: Property vs. S&P 500</h2>
-                            <p class="text-sm text-slate-600 mt-1">A true "apples-to-apples" comparison to answer the question: what's the best use of your capital?</p>
-                            <div class="mt-4 overflow-x-auto">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                                        <tr>
-                                            <th class="px-4 py-2">Metric</th>
-                                            <th class="px-4 py-2 text-center">This Property</th>
-                                            <th class="px-4 py-2 text-center">S&P 500</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="showdownTableBody" class="divide-y divide-slate-200">
-                                    </tbody>
-                                </table>
+                        <div id="executive-dashboard" class="space-y-6">
+                            
+                            <div id="showdownCard" class="p-6 bg-white rounded-xl shadow-sm border-2 border-slate-200" style="border-color: var(--strategy-color);">
+                                <h2 class="text-2xl font-bold text-slate-900">Investment Showdown: Property vs. S&P 500</h2>
+                                <p class="text-sm text-slate-600 mt-1">A true "apples-to-apples" comparison to answer the question: what's the best use of your capital?</p>
+                                <div class="mt-4 overflow-x-auto">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                            <tr>
+                                                <th class="px-4 py-2">Metric</th>
+                                                <th class="px-4 py-2 text-center">This Property</th>
+                                                <th class="px-4 py-2 text-center">S&P 500</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="showdownTableBody" class="divide-y divide-slate-200">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="showdownVerdict" class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800">
+                                </div>
                             </div>
-                            <div id="showdownVerdict" class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-800">
-                            </div>
-                            <div class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                <div class="flex justify-between items-center mb-3">
-                                    <div>
-                                        <h3 class="font-semibold text-slate-800">Property Viability Checklist</h3>
-                                        <p class="text-xs text-slate-500">Compares Year 1 pre-tax results to your criteria.</p>
+
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex flex-wrap justify-between items-center mb-4 gap-y-3">
+                                    <h2 class="text-2xl font-semibold text-slate-900">Executive Performance</h2>
+                                    <div class="flex flex-col sm:flex-row items-end gap-3 text-sm">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-slate-600" id="timeToggleLabelYear1">Year 1</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="timeHorizonToggle" class="sr-only">
+                                                <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                            </label>
+                                            <span class="font-semibold text-slate-800" id="timeToggleLabelFullPeriod">Full Period (IRR)</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-slate-600">Pre-Tax</span>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="taxStatusToggle" class="sr-only">
+                                                <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                            </label>
+                                            <span class="font-semibold text-slate-800">After-Tax</span>
+                                        </div>
                                     </div>
-                                    <span id="verdictBadge" class="text-lg font-bold px-3 py-1 rounded-md"></span>
                                 </div>
-                                <ul id="verdictChecklist" class="space-y-2 text-slate-700 text-sm"></ul>
-                            </div>
-                        </div>
-
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Key Metrics (Year 1)</h2>
-                            <div id="key-metrics-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-                                <div data-metric="cashReserves" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="A recommended safety net to cover 6 months of core housing expenses (Principal, Interest, Taxes, and Insurance) in case of vacancy or unexpected issues.">Cash Reserves <span class="help-icon">?</span></span></p>
-                                    <p id="cashReserves" class="metric-value text-lg font-semibold"></p>
-                                    <p id="cashReservesBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                                    <div data-metric="headlineCashFlow" class="p-4 rounded-lg col-span-2 lg:col-span-2 order-1 lg:order-1 border border-slate-200">
+                                        <p class="metric-label text-sm text-slate-600">
+                                            <span class="tooltip-container justify-center" data-tooltip="The cash generation metric. Shows Monthly Cash Flow (Year 1) or Total Net Profit (Full Period).">
+                                                <span id="cashFlowTypeLabel">Monthly Cash Flow</span> 
+                                                <span id="cashFlowPeriodLabel" class="font-semibold">Year 1, Pre-Tax</span> 
+                                                <span class="help-icon">?</span>
+                                            </span>
+                                        </p>
+                                        <p id="headlineCashFlow" class="metric-value text-3xl font-bold"></p>
+                                        <p id="headlineCashFlowBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                    </div>
+                                    <div data-metric="headlineRoi" class="p-4 rounded-lg col-span-2 lg:col-span-2 order-2 lg:order-2 border border-slate-200">
+                                        <p class="metric-label text-sm text-slate-600">
+                                            <span class="tooltip-container justify-center" data-tooltip="The rate of return metric. Shows Cash-on-Cash ROI (Year 1) or Internal Rate of Return (Full Period).">
+                                                <span id="roiTypeLabel">Cash-on-Cash ROI</span> 
+                                                <span id="roiPeriodLabel" class="font-semibold">Year 1, Pre-Tax</span> 
+                                                <span class="help-icon">?</span>
+                                            </span>
+                                        </p>
+                                        <p id="headlineRoi" class="metric-value text-3xl font-bold"></p>
+                                        <p id="headlineRoiBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                    </div>
                                 </div>
-                                 <div data-metric="afterTaxMonthlyCashFlow" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The money left over each month after all expenses AND income taxes have been paid. This is your true take-home profit. Because of tax deductions like depreciation, this can sometimes be higher than your pre-tax cash flow.">After-Tax Cash Flow <span class="help-icon">?</span></span></p>
-                                    <p id="afterTaxMonthlyCashFlow" class="metric-value text-3xl font-bold"></p>
-                                    <p id="afterTaxMonthlyCashFlowBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="afterTaxCocRoi" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The after-tax annual return on the actual cash you invested.<br><br><strong>Formula:</strong> (After-Tax Annual Cash Flow / Total Cash Needed)<br><br><strong>Interpretation:</strong> This is arguably the most important metric for a cash flow investor. A higher CoC ROI means your cash is working harder for you.">After-Tax CoC ROI <span class="help-icon">?</span></span></p>
-                                    <p id="afterTaxCocRoi" class="metric-value text-3xl font-bold"></p>
-                                    <p id="afterTaxCocRoiBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="monthlyCashFlow" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The money left over each month after all expenses, including the mortgage, have been paid (but before taxes).<br><br><strong>Formula:</strong> Net Operating Income - Debt Service">Pre-Tax Cash Flow <span class="help-icon">?</span></span></p>
-                                    <p id="monthlyCashFlow" class="metric-value text-lg font-semibold"></p>
-                                    <p id="monthlyCashFlowBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="cocRoi" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The pre-tax annual return on the actual cash you invested.<br><br><strong>Formula:</strong> (Annual Cash Flow / Total Cash Needed)">Pre-Tax CoC ROI <span class="help-icon">?</span></span></p>
-                                    <p id="cocRoi" class="metric-value text-lg font-semibold"></p>
-                                    <p id="cocRoiBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="noi" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Net Operating Income. The property's annual income before mortgage payments. This is a key metric for determining a property's profitability, independent of financing.<br><br><strong>Formula:</strong> (Effective Monthly Income - Monthly OpEx) * 12">NOI (Annual) <span class="help-icon">?</span></span></p>
-                                    <p id="noi" class="metric-value text-lg font-semibold"></p>
-                                    <p id="noiBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="capRate" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Capitalization Rate. The unleveraged annual return of the property. <br><br><strong>Formula:</strong> Annual NOI / Purchase Price<br><br><strong>Interpretation:</strong> Varies greatly by market. A higher cap rate generally indicates higher risk and/or a less desirable area, while a lower cap rate indicates lower risk and a more desirable area. Use it to compare similar properties in the same market.">Cap Rate <span class="help-icon">?</span></span></p>
-                                    <p id="capRate" class="metric-value text-lg font-semibold"></p>
-                                    <p id="capRateBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="totalCashNeeded" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The total amount of cash you need to bring to closing. This is the denominator for your CoC ROI calculation.<br><br><strong>Formula:</strong> Down Payment + Closing Costs + Rehab Costs">Total Cash Needed <span class="help-icon">?</span></span></p>
-                                    <p id="totalCashNeeded" class="metric-value text-lg font-semibold"></p>
-                                    <p id="totalCashNeededBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="forcedEquity" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The equity created immediately upon purchase and renovation by buying a property below its after-repair market value. A key metric for value-add investors.<br><br><strong>Formula:</strong> After Repair Value - (Purchase Price + Rehab + Closing Costs)">Forced Equity <span class="help-icon">?</span></span></p>
-                                    <p id="forcedEquity" class="metric-value text-lg font-semibold"></p>
-                                    <p id="forcedEquityBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                <div class="mt-6 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div>
+                                            <h3 class="font-semibold text-slate-800">Property Viability Checklist</h3>
+                                            <p class="text-xs text-slate-500">Compares Year 1 pre-tax results to your criteria.</p>
+                                        </div>
+                                        <span id="verdictBadge" class="text-lg font-bold px-3 py-1 rounded-md"></span>
+                                    </div>
+                                    <ul id="verdictChecklist" class="space-y-2 text-slate-700 text-sm"></ul>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-2">
-                                <h2 class="text-2xl font-semibold text-slate-900">Monthly Breakdown</h2>
-                                <div class="flex items-center space-x-2 text-sm">
-                                    <span id="breakdownToggleLabelExpense" class="font-semibold text-slate-800">Expenses</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="breakdownToggle" class="sr-only">
-                                        <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
-                                    </label>
-                                    <span id="breakdownToggleLabelIncome" class="text-slate-600">Income</span>
-                                </div>
-                                <p id="breakdownTotal" class="flex-grow text-right text-2xl font-bold text-slate-800"></p>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                                <div class="h-64 relative">
-                                    <canvas id="expenseChart"></canvas>
-                                </div>
-                                <div id="expenseLegend" class="text-sm space-y-2"></div>
-                            </div>
-                        </div>
 
                         <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                             <h2 class="text-2xl font-semibold text-slate-900 flex items-center mb-4">
-                                Debt & Amortization
-                                <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li><strong>For Fixed/ARM loans:</strong> It shows how your loan balance is paid down over time, breaking down the total into Remaining Principal vs. Cumulative Interest Paid.</li><li><strong>For Margin loans:</strong> It shows the projected loan balance over your hold period.</li><li>The vertical dashed line (on fixed loans) marks the <strong>'Crossover Point'</strong> - the milestone where your monthly principal payment exceeds your interest payment.</li></ul>">
-                                    <span class="help-icon">?</span>
-                                </span>
-                            </h2>
-                            <div class="h-96 relative">
-                                <canvas id="amortizationChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Key Ratios & Rules of Thumb</h2>
-                            <div id="key-ratios-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-                                <div data-metric="dscr" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Debt Service Coverage Ratio. Shows if the property's income can cover its debt payments. <br><br><strong>Formula:</strong> Annual NOI / Annual Debt Service<br><br><strong>Interpretation:</strong> This is a primary metric for lenders. A DSCR of <strong>> 1.25 is typically required</strong> for a loan. Higher is better, indicating a safer investment.">DSCR <span class="help-icon">?</span></span></p>
-                                    <p id="dscr" class="metric-value text-lg font-semibold"></p>
-                                    <p id="dscrBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="grm" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Gross Rent Multiplier. A rough measure of a property's value relative to its income.<br><br><strong>Formula:</strong> Purchase Price / Gross Annual Rent<br><br><strong>Interpretation:</strong> Lower is generally better. A GRM of <strong>8-12 is often considered reasonable</strong>, but this is highly market-dependent. Use it to compare similar properties in the same area.">GRM <span class="help-icon">?</span></span></p>
-                                    <p id="grm" class="metric-value text-lg font-semibold"></p>
-                                    <p id="grmBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
-                                </div>
-                                <div data-metric="onePercentRule" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Does the monthly rent meet or exceed 1% of the purchase price? A classic quick check for cash flow potential.<br><br><strong>Formula:</strong> Monthly Rent / Purchase Price<br><br><strong>Interpretation:</strong> A value <strong>> 1% is considered strong</strong>, though this is increasingly difficult to find in many markets.">1% Rule <span class="help-icon">?</span></span></p>
+                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Quick Screeners & Rules of Thumb</h2>
+                            <div id="quick-ratios-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                                <div data-metric="onePercentRule" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Does the monthly rent meet or exceed 1% of the purchase price? A classic quick check for cash flow potential.">1% Rule <span class="help-icon">?</span></span></p>
                                     <p id="onePercentRule" class="metric-value text-lg font-semibold"></p>
                                     <p id="onePercentRuleBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
                                 </div>
-                                <div data-metric="fiftyPercentRule" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Are your operating expenses (excluding mortgage) around 50% of your income? A classic sanity check on your expense projections.<br><br><strong>Formula:</strong> Monthly OpEx / Monthly Income<br><br><strong>Interpretation:</strong> If your value is <strong>far below 50%</strong>, you may be underestimating expenses. If it's far above, the property may have high costs.">50% Rule <span class="help-icon">?</span></span></p>
+                                <div data-metric="fiftyPercentRule" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Are your operating expenses (excluding mortgage) around 50% of your income? A classic sanity check on your expense projections.">50% Rule <span class="help-icon">?</span></span></p>
                                     <p id="fiftyPercentRule" class="metric-value text-lg font-semibold"></p>
                                     <p id="fiftyPercentRuleBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
                                 </div>
-                                <div data-metric="debtYield" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="A measure of the lender's risk. It is the return they would receive on their loan if they had to foreclose on day one.<br><br><strong>Formula:</strong> Annual NOI / Loan Amount<br><br><strong>Interpretation:</strong> Higher is safer for the lender. Lenders often look for a Debt Yield of <strong>10% or higher</strong> in stable markets.">Debt Yield <span class="help-icon">?</span></span></p>
+                                <div data-metric="grm" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Gross Rent Multiplier. A rough measure of a property's value relative to its income.">GRM <span class="help-icon">?</span></span></p>
+                                    <p id="grm" class="metric-value text-lg font-semibold"></p>
+                                    <p id="grmBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Property Financial Engine</h2>
+                            <p class="text-sm text-slate-600 mb-4">Core metrics that define the asset's unleveraged profitability and growth potential. Priorities are highlighted based on the selected strategy.</p>
+
+                            <div id="property-financial-engine-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                                
+                                <div data-metric="totalCashNeeded" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The total amount of cash you need to bring to closing. Denominator for CoC ROI.">Total Cash Needed <span class="help-icon">?</span></span></p>
+                                    <p id="totalCashNeeded" class="metric-value text-lg font-semibold"></p>
+                                    <p id="totalCashNeededBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                                <div data-metric="noi" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Net Operating Income. The property's annual engine, independent of debt.">NOI (Annual) <span class="help-icon">?</span></span></p>
+                                    <p id="noi" class="metric-value text-lg font-semibold"></p>
+                                    <p id="noiBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                                <div data-metric="capRate" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Capitalization Rate. Unleveraged market return (NOI / Price).">Cap Rate <span class="help-icon">?</span></span></p>
+                                    <p id="capRate" class="metric-value text-lg font-semibold"></p>
+                                    <p id="capRateBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                                <div data-metric="forcedEquity" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="The equity created immediately upon purchase and renovation (ARV - Total Cost).">Forced Equity <span class="help-icon">?</span></span></p>
+                                    <p id="forcedEquity" class="metric-value text-lg font-semibold"></p>
+                                    <p id="forcedEquityBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                                <div data-metric="averageRoe" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Annualized Return on Equity. Average efficiency of your trapped equity over the hold period.">Avg. Annual ROE <span class="help-icon">?</span></span></p>
+                                    <p id="averageRoe" class="metric-value text-lg font-semibold"></p>
+                                    <p id="averageRoeBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Debt and Safety Analysis</h2>
+                            <div id="risk-ratios-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                                <div data-metric="dscr" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Debt Service Coverage Ratio. Shows if the property's income can cover its debt payments. Lender typically requires > 1.25.">DSCR <span class="help-icon">?</span></span></p>
+                                    <p id="dscr" class="metric-value text-lg font-semibold"></p>
+                                    <p id="dscrBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
+                                <div data-metric="debtYield" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="A measure of the lender's risk. The return they would receive if they had to foreclose. Often requires 10% or higher.">Debt Yield <span class="help-icon">?</span></span></p>
                                     <p id="debtYield" class="metric-value text-lg font-semibold"></p>
                                     <p id="debtYieldBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
                                 </div>
-                                <div data-metric="ltvLtc" class="p-4 rounded-lg">
-                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Ratios lenders use to assess risk against the property's value and total project cost.<br><br><strong>LTV (Loan-to-Value):</strong> Loan / Purchase Price<br><strong>LTC (Loan-to-Cost):</strong> Loan / (Price + Rehab)<br><br><strong>Interpretation:</strong> Lenders typically cap LTV/LTC at 75-80% for investment properties.">LTV / LTC <span class="help-icon">?</span></span></p>
+                                <div data-metric="ltvLtc" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="Ratios lenders use to assess risk against the property's value (LTV) and total project cost (LTC).">LTV / LTC <span class="help-icon">?</span></span></p>
                                     <p id="ltvLtc" class="metric-value text-lg font-semibold"></p>
                                     <p id="ltvLtcBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
                                 </div>
+                                <div data-metric="cashReserves" class="p-4 rounded-lg border border-slate-200">
+                                    <p class="metric-label text-sm text-slate-600"><span class="tooltip-container justify-center" data-tooltip="A recommended safety net to cover 6 months of core housing expenses (PITI) in case of vacancy or unexpected issues.">Cash Reserves <span class="help-icon">?</span></span></p>
+                                    <p id="cashReserves" class="metric-value text-lg font-semibold"></p>
+                                    <p id="cashReservesBreakdown" class="metric-breakdown text-xs text-slate-500"></p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
-                                <h2 class="text-2xl font-semibold text-slate-900 flex items-center">
-                                    Long-Term Wealth Projection
-                                    <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li>The <strong style='color: #2E7D32'>Property Value Area</strong> shows the total projected value of the asset over time.</li><li>The <strong style='color: #A0A0A0'>Loan Balance Area</strong> within it shows how much is still owed.</li><li>The green area between the two lines is your <strong>Equity</strong>.</li><li>The <strong style='color: #1565C0'>Cash Flow Line</strong> shows your yearly income, plotted on the right-hand axis for clarity. Use the toggle to see the impact of taxes.</li></ul>">
+                        <div class="space-y-6">
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                <h2 class="text-2xl font-semibold text-slate-900 mb-1">Sources of Wealth</h2>
+                                <p class="text-sm text-slate-600 mb-4"><span class="tooltip-container" data-tooltip="This chart shows how your initial investment grows into your final equity. It visualizes the three engines of real estate wealth creation: cash flow (income), loan paydown (forced savings), and appreciation (market growth).">
+                                    How your initial equity is built up over the hold period.
+                                    <span class="help-icon">?</span>
+                                </span></p>
+                                <div id="profitBreakdownSummary" class="mb-6 p-4 bg-slate-50 border border-slate-200"></div>
+                                <div class="h-72 relative">
+                                    <canvas id="returnWaterfallChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                                    <h2 class="text-2xl font-semibold text-slate-900 flex items-center">
+                                        Long-Term Wealth Projection
+                                        <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li>The <strong style='color: #2E7D32'>Property Value Area</strong> shows the total projected value of the asset over time.</li><li>The <strong style='color: #A0A0A0'>Loan Balance Area</strong> within it shows how much is still owed.</li><li>The green area between the two lines is your <strong>Equity</strong>.</li><li>The <strong style='color: #1565C0'>Cash Flow Line</strong> shows your yearly income, plotted on the right-hand axis for clarity. Use the toggle to see the impact of taxes.</li></ul>">
+                                            <span class="help-icon">?</span>
+                                        </span>
+                                    </h2>
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <span class="text-slate-600">Pre-Tax</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="wealthChartToggle" class="sr-only">
+                                            <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                        </label>
+                                        <span class="font-semibold text-slate-800">After-Tax</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-slate-600 mb-4">Visualize your wealth growth over time. Track how your Equity (the green area) grows as the Loan is paid down against the total Property Value.</p>
+                                <div class="h-96 relative">
+                                    <canvas id="wealthProjectionChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                                    <h2 class="text-2xl font-semibold text-slate-900 flex items-center">
+                                        Optimal Exit Analysis
+                                        <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li>The <strong>Profit Bars</strong> show the total net profit you would realize if you sold in that year. Use the toggle to see the impact of capital gains taxes.</li><li>The <strong style='color: #6A1B9A'>Annualized Return Line</strong> represents your total return on investment, averaged per year. The peak of this line, marked with a dashed line, is generally the most profitable year to exit.</li><li>The <strong style='color: #1565C0'>Return on Equity (ROE) Dotted Line</strong> shows how efficiently your trapped equity is working. A declining ROE signals it may be time to sell or refinance to redeploy your capital into a new, higher-performing asset.</li></ul>">
+                                            <span class="help-icon">?</span>
+                                        </span>
+                                    </h2>
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <span class="text-slate-600">Pre-Tax</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="exitChartToggle" class="sr-only">
+                                            <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                        </label>
+                                        <span class="font-semibold text-slate-800">After-Tax</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-slate-600 mb-4">Identify the best time to sell or refinance by comparing total profit growth against your investment's performance (Annualized Return) and equity efficiency (ROE).</p>
+                                <div class="h-96 relative">
+                                    <canvas id="optimalExitChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex flex-wrap justify-between items-center mb-4 gap-x-4 gap-y-2">
+                                    <h2 class="text-2xl font-semibold text-slate-900">Monthly Breakdown</h2>
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <span id="breakdownToggleLabelExpense" class="font-semibold text-slate-800">Expenses</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="breakdownToggle" class="sr-only">
+                                            <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                        </label>
+                                        <span id="breakdownToggleLabelIncome" class="text-slate-600">Income</span>
+                                    </div>
+                                    <p id="breakdownTotal" class="flex-grow text-right text-2xl font-bold text-slate-800"></p>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                    <div class="h-64 relative">
+                                        <canvas id="expenseChart"></canvas>
+                                    </div>
+                                    <div id="expenseLegend" class="text-sm space-y-2"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                                 <h2 class="text-2xl font-semibold text-slate-900 flex items-center mb-4">
+                                    Debt & Amortization
+                                    <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li><strong>Fixed/ARM Loans:</strong> Shows your growing **Equity** (green area) as the **Loan Balance** (gray area) is paid down by amortization.</li><li><strong>Margin Loans:</strong> Shows the Loan Balance decline driven by your **Investor-Driven Paydown** strategy (using excess profit), alongside the cost of interest and equity growth.</li></ul>">
                                         <span class="help-icon">?</span>
                                     </span>
                                 </h2>
-                                <div class="flex items-center space-x-2 text-sm">
-                                    <span class="text-slate-600">Pre-Tax</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="wealthChartToggle" class="sr-only">
-                                        <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
-                                    </label>
-                                    <span class="font-semibold text-slate-800">After-Tax</span>
+                                <div class="h-96 relative">
+                                    <canvas id="amortizationChart"></canvas>
                                 </div>
                             </div>
-                            <p class="text-sm text-slate-600 mb-4">Visualize your wealth growth over time. Track how your Equity (the green area) grows as the Loan is paid down against the total Property Value.</p>
-                            <div class="h-96 relative">
-                                <canvas id="wealthProjectionChart"></canvas>
-                            </div>
                         </div>
-
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
-                                <h2 class="text-2xl font-semibold text-slate-900 flex items-center">
-                                    Optimal Exit Analysis
-                                    <span class="tooltip-container ml-2" data-tooltip="<strong>How to Read This Chart:</strong><br><ul class='list-disc pl-4 mt-1 space-y-1'><li>The <strong>Profit Bars</strong> show the total net profit you would realize if you sold in that year. Use the toggle to see the impact of capital gains taxes.</li><li>The <strong style='color: #6A1B9A'>Annualized Return Line</strong> represents your total return on investment, averaged per year. The peak of this line, marked with a dashed line, is generally the most profitable year to exit.</li><li>The <strong style='color: #1565C0'>Return on Equity (ROE) Dotted Line</strong> shows how efficiently your trapped equity is working. A declining ROE signals it may be time to sell or refinance to redeploy your capital into a new, higher-performing asset.</li></ul>">
-                                        <span class="help-icon">?</span>
-                                    </span>
-                                </h2>
-                                <div class="flex items-center space-x-2 text-sm">
-                                    <span class="text-slate-600">Pre-Tax</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="exitChartToggle" class="sr-only">
-                                        <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
-                                    </label>
-                                    <span class="font-semibold text-slate-800">After-Tax</span>
-                                </div>
-                            </div>
-                            <p class="text-sm text-slate-600 mb-4">Identify the best time to sell or refinance by comparing total profit growth against your investment's performance (Annualized Return) and equity efficiency (ROE).</p>
-                            <div class="h-96 relative">
-                                <canvas id="optimalExitChart"></canvas>
-                            </div>
-                        </div>
-
+                        
                         <div id="saleAnalysisCard" class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
                             <h2 class="text-2xl font-semibold text-slate-900 mb-4">Sale Analysis (End of Year <span id="saleAnalysisYear"></span>)</h2>
                             <div id="saleAnalysisContent" class="space-y-3 text-sm">
                                 </div>
                         </div>
 
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <h2 class="text-2xl font-semibold text-slate-900 mb-1">Sources of Wealth</h2>
-                            <p class="text-sm text-slate-600 mb-4"><span class="tooltip-container" data-tooltip="This chart shows how your initial investment grows into your final equity. It visualizes the three engines of real estate wealth creation: cash flow (income), loan paydown (forced savings), and appreciation (market growth).">
-                                How your initial equity is built up over the hold period.
-                                <span class="help-icon">?</span>
-                            </span></p>
-                            <div id="profitBreakdownSummary" class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200"></div>
-                            <div class="h-72 relative">
-                                <canvas id="returnWaterfallChart"></canvas>
+                        <div id="analysisOverTimeContainer" class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-wrap justify-between items-center mb-4 gap-y-2">
+                                <h2 class="text-2xl font-semibold text-slate-900">Analysis Over Time</h2>
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-slate-600">Table View</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="projectionsChartToggle" class="sr-only">
+                                        <div class="toggle-switch-track"><span class="toggle-switch-thumb"></span></div>
+                                    </label>
+                                    <span class="font-semibold text-slate-800">Chart View</span>
+                                </div>
                             </div>
-                        </div>
+                            
+                            <div id="analysisChartContainer" class="hidden space-y-4">
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <span class="text-sm font-medium text-slate-700">Select Metrics to Plot:</span>
+                                    <select id="projectionsDataSelector" multiple size="6" class="block w-full max-w-sm rounded-md shadow-sm sm:text-sm bg-slate-50 border-slate-300">
+                                        <optgroup label="Returns & Cash Flow">
+                                            <option value="afterTax.cashFlow" data-currency="true" data-rate="false">After-Tax CF</option>
+                                            <option value="afterTax.roe" data-currency="false" data-rate="true">Return on Equity (ROE)</option>
+                                            <option value="afterTax.annualizedReturn" data-currency="false" data-rate="true">Annualized Return (IRR)</option>
+                                            <option value="preTax.cashFlow" data-currency="true" data-rate="false">Pre-Tax CF</option>
+                                        </optgroup>
+                                        <optgroup label="Asset & Debt">
+                                            <option value="propertyValue" data-currency="true" data-rate="false">Prop. Value</option>
+                                            <option value="equity" data-currency="true" data-rate="false">Total Equity</option>
+                                            <option value="loanBalance" data-currency="true" data-rate="false">Loan Balance</option>
+                                            <option value="annualInterestPaid" data-currency="true" data-rate="false">Interest Paid</option>
+                                            <option value="annualNOI" data-currency="true" data-rate="false">Annual NOI</option>
+                                        </optgroup>
+                                        <optgroup label="Tax & Profit">
+                                            <option value="taxImpact" data-currency="true" data-rate="false">Tax Impact</option>
+                                            <option value="afterTax.profitIfSold" data-currency="true" data-rate="false">After-Tax Profit</option>
+                                            <option value="afterTax.realAnnualizedReturn" data-currency="false" data-rate="true">Real Ann. Return</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="h-96 relative">
+                                    <canvas id="projectionsChart"></canvas>
+                                </div>
+                            </div>
 
-                        <div class="p-6 bg-white rounded-xl shadow-sm border border-slate-200">
-                            <h2 class="text-2xl font-semibold text-slate-900 mb-4">Analysis Over Time</h2>
-                            <div class="table-wrapper">
+                            <div id="projectionsTableWrapper" class="table-wrapper">
                                 <table class="w-full text-sm text-left whitespace-nowrap">
                                     <thead class="text-xs text-slate-700 uppercase bg-slate-200">
                                         <tr>
@@ -1881,7 +2118,7 @@
                 },
 
                 updateStrategicInsights({ state }) {
-                    const { strategyThemes } = App.config;
+                    const { strategyThemes, strategyHighlights } = App.config;
                     const strategy = state.investmentStrategy;
                     const theme = strategyThemes[strategy];
 
@@ -1899,57 +2136,105 @@
                         }
                     });
                     
-                    document.querySelectorAll('#key-metrics-grid [data-metric], #key-ratios-grid [data-metric]').forEach(el => {
+                    const hexColor = getComputedStyle(document.documentElement).getPropertyValue(theme.cssVar.replace('var(','').replace(')','')).trim();
+                    
+                    // FIX: This section was referencing strategyHighlights as a local variable 
+                    // that was not correctly defined in the previous steps. It should be 
+                    // correctly scoped via destructuring (which we already did) but 
+                    // needed the logic to access the strategy value.
+                    const highlightMetrics = strategyHighlights[strategy] || [];
+                    
+                    const allMetrics = Array.from(document.querySelectorAll('#property-financial-engine-grid [data-metric]'));
+                    
+                    // 1. Reset all metrics
+                    allMetrics.forEach(el => {
                         el.classList.remove('metric-highlight');
-                        el.style.order = '';
+                        el.style.order = ''; // Reset order
                         el.style.backgroundColor = '';
                         el.style.borderColor = '';
                     });
-
-                    let metricHighlights = [], ratioHighlights = [];
-
-                    switch(strategy) {
-                        case 'cashflow':
-                            metricHighlights = ['afterTaxMonthlyCashFlow', 'afterTaxCocRoi'];
-                            ratioHighlights = ['dscr', 'onePercentRule'];
-                            break;
-                        case 'valueadd':
-                            metricHighlights = ['forcedEquity', 'totalCashNeeded'];
-                            ratioHighlights = ['ltvLtc'];
-                            break;
-                        case 'appreciation':
-                            metricHighlights = ['capRate', 'noi'];
-                            ratioHighlights = ['grm'];
-                            break;
-                    }
                     
-                    const hexColor = getComputedStyle(document.documentElement).getPropertyValue(theme.cssVar.replace('var(','').replace(')','')).trim();
-
-                    const allHighlights = [...metricHighlights, ...ratioHighlights];
-                    allHighlights.forEach(metricId => {
-                        const el = document.querySelector(`[data-metric="${metricId}"]`);
-                        if (el) {
-                            el.classList.add('metric-highlight');
-                            el.style.order = '-1';
-                            el.style.backgroundColor = App.utils.hexToRgba(hexColor, 0.05);
-                            el.style.borderColor = App.utils.hexToRgba(hexColor, 0.4);
-                        }
-                    });
+                    // 2. Highlight and set order for strategic metrics
+                    if (allMetrics.length > 0) {
+                         highlightMetrics.forEach((metricId, index) => {
+                            const el = document.querySelector(`#property-financial-engine-grid [data-metric="${metricId}"]`);
+                            if (el) {
+                                el.classList.add('metric-highlight');
+                                // Assign the lowest order numbers to the highlight metrics
+                                el.style.order = index.toString(); 
+                                el.style.backgroundColor = App.utils.hexToRgba(hexColor, 0.05);
+                                el.style.borderColor = App.utils.hexToRgba(hexColor, 0.4);
+                            }
+                        });
+                        // Set the order for non-highlighted metrics to be high (e.g., 100) so they flow after the prioritized ones
+                        allMetrics.forEach(el => {
+                            if (!el.classList.contains('metric-highlight')) {
+                                el.style.order = '100';
+                            }
+                        });
+                    }
                 },
 
                 updateKeyMetrics(results) {
                     const { formatCurrency, formatPercent } = App.utils;
-                    const { metrics, shared, state } = results;
+                    const { metrics, shared, state, projections } = results;
                     
+                    const isTimeFull = document.getElementById(App.config.dom.toggles.timeHorizonToggle).checked;
+                    const isTaxAfter = document.getElementById(App.config.dom.toggles.taxStatusToggle).checked;
+
                     const metricColor = (val) => val >= 0 ? 'text-green-600' : 'text-red-600';
-                    
-                    document.getElementById(App.config.dom.outputs.monthlyCashFlow).className = `metric-value text-lg font-semibold ${metricColor(metrics.preTax.monthlyCashFlow)}`;
-                    document.getElementById(App.config.dom.outputs.afterTaxMonthlyCashFlow).className = `metric-value text-3xl font-bold ${metricColor(metrics.afterTax.monthlyCashFlow)}`;
-                    
-                    this._setMetric('afterTaxMonthlyCashFlow', formatCurrency(metrics.afterTax.monthlyCashFlow), `${formatCurrency(results.shared.effectiveMonthlyIncome - results.shared.monthlyOpEx,0)} - ${formatCurrency(results.shared.monthlyPI,0)} - ${formatCurrency(metrics.preTax.monthlyCashFlow - metrics.afterTax.monthlyCashFlow,0)} tax`);
-                    this._setMetric('afterTaxCocRoi', formatPercent(metrics.afterTax.cocRoi), `${formatCurrency(metrics.afterTax.annualCashFlow,0)} / ${formatCurrency(shared.totalCashNeeded,0)}`);
-                    this._setMetric('monthlyCashFlow', formatCurrency(metrics.preTax.monthlyCashFlow), `${formatCurrency(results.shared.noi/12,0)} - ${formatCurrency(shared.monthlyPI,0)}`);
-                    this._setMetric('cocRoi', formatPercent(metrics.preTax.cocRoi), `${formatCurrency(metrics.preTax.annualCashFlow,0)} / ${formatCurrency(shared.totalCashNeeded,0)}`);
+                    const finalYear = projections[projections.length - 1] || {};
+                    const totalProfit = isTaxAfter ? (finalYear.afterTax?.profitIfSold || 0) : (finalYear.preTax?.profitIfSold || 0);
+                    const annualizedReturn = isTaxAfter ? (finalYear.afterTax?.annualizedReturn || 0) : (finalYear.preTax?.annualizedReturn || 0);
+
+                    // --- Dynamic Headline Metrics ---
+
+                    let headlineCF, headlineROI, cfType, roiType, cfBreakdown, roiBreakdown, cfPeriod, roiPeriod;
+
+                    if (isTimeFull) { // Full Period (IRR & Total Profit)
+                        headlineCF = totalProfit;
+                        headlineROI = annualizedReturn; // This uses the IRR proxy (Annualized Return)
+                        cfType = 'Total Net Profit';
+                        roiType = 'Internal Rate of Return (IRR)';
+                        cfPeriod = isTaxAfter ? 'After-Tax' : 'Pre-Tax'; // Removed redundant parentheses
+                        roiPeriod = cfPeriod;
+                        cfBreakdown = `${formatCurrency(finalYear.afterTax?.cumulativeCashFlow || 0, 0)} + Net Sale Proceeds`;
+                        roiBreakdown = `Avg Annual Rate over ${state.holdPeriod} years`;
+                    } else { // Year 1 (Cash Flow & CoC ROI)
+                        const cfMetric = isTaxAfter ? metrics.afterTax.monthlyCashFlow : metrics.preTax.monthlyCashFlow;
+                        const roiMetric = isTaxAfter ? metrics.afterTax.cocRoi : metrics.preTax.cocRoi;
+                        headlineCF = cfMetric;
+                        headlineROI = roiMetric;
+                        cfType = 'Monthly Cash Flow';
+                        roiType = 'Cash-on-Cash ROI';
+                        cfPeriod = isTaxAfter ? 'After-Tax' : 'Pre-Tax'; // Removed redundant parentheses
+                        roiPeriod = cfPeriod;
+
+                        if (isTaxAfter) {
+                            const taxSavings = (metrics.preTax.monthlyCashFlow - metrics.afterTax.monthlyCashFlow);
+                            cfBreakdown = `${formatCurrency(metrics.preTax.monthlyCashFlow,0)} + ${formatCurrency(-taxSavings,0)} (Tax Shield)`;
+                            roiBreakdown = `${formatCurrency(metrics.afterTax.annualCashFlow,0)} / ${formatCurrency(shared.totalCashNeeded,0)}`;
+                        } else {
+                            cfBreakdown = `${formatCurrency(shared.noi/12,0)} - ${formatCurrency(shared.monthlyPI,0)}`;
+                            roiBreakdown = `${formatCurrency(metrics.preTax.annualCashFlow,0)} / ${formatCurrency(shared.totalCashNeeded,0)}`;
+                        }
+                    }
+
+                    // Apply Dynamic Headline Values
+                    document.getElementById(App.config.dom.outputs.cashFlowTypeLabel).textContent = cfType;
+                    document.getElementById(App.config.dom.outputs.cashFlowPeriodLabel).textContent = cfPeriod;
+                    document.getElementById(App.config.dom.outputs.roiTypeLabel).textContent = roiType;
+                    document.getElementById(App.config.dom.outputs.roiPeriodLabel).textContent = roiPeriod;
+
+                    document.getElementById(App.config.dom.outputs.headlineCashFlow).className = `metric-value text-3xl font-bold ${metricColor(headlineCF)}`;
+                    this._setMetric('headlineCashFlow', isTimeFull ? formatCurrency(headlineCF) : formatCurrency(headlineCF), cfBreakdown);
+
+                    document.getElementById(App.config.dom.outputs.headlineRoi).className = `metric-value text-3xl font-bold ${metricColor(headlineROI)}`;
+                    this._setMetric('headlineRoi', isTimeFull ? formatPercent(headlineROI) : formatPercent(headlineROI), roiBreakdown);
+
+
+                    // --- Fixed Metrics (Set once, used in multiple cards) ---
+
                     this._setMetric('noi', formatCurrency(shared.noi), `${formatCurrency(shared.effectiveMonthlyIncome*12,0)} - ${formatCurrency(shared.monthlyOpEx*12,0)}`);
                     this._setMetric('capRate', formatPercent(shared.capRate), `${formatCurrency(shared.noi,0)} / ${formatCurrency(state.purchasePrice,0)}`);
                     this._setMetric('totalCashNeeded', formatCurrency(shared.totalCashNeeded), `${formatCurrency(shared.downPaymentAmount, 0)} + ${formatCurrency(state.closingCosts, 0)} + ${formatCurrency(state.rehabCosts, 0)}`);
@@ -1961,6 +2246,10 @@
                     this._setMetric('fiftyPercentRule', formatPercent(shared.fiftyPercentRule, 1), `${formatCurrency(shared.monthlyOpEx,0)} / ${formatCurrency(shared.totalMonthlyIncome,0)}`);
                     this._setMetric('debtYield', formatPercent(shared.debtYield, 2), `${formatCurrency(shared.noi,0)} / ${formatCurrency(shared.loanAmount,0)}`);
                     this._setMetric('ltvLtc', `${formatPercent(shared.ltv, 1)} / ${formatPercent(shared.ltc, 1)}`, `LTV / LTC`);
+                    this._setMetric('averageRoe', formatPercent(shared.averageRoe), `Avg. After-Tax CF / Equity`);
+                    
+                    // Call updateStrategy after setting all metrics to ensure correct highlighting and ordering
+                    this.updateStrategicInsights({ state });
                 },
 
                 updateBreakdownChart({ shared }) {
@@ -2252,28 +2541,101 @@
                     }
                 },
 
-                // FIX: Replace entire function to correctly handle margin vs. amortizing loans
                 updateAmortizationChart({ projections, state }) {
                     const { dom, colors } = App.config;
                     const { formatCurrency, hexToRgba } = App.utils;
                     const chartEl = document.getElementById(dom.charts.amortizationChart);
-                    if (!chartEl || projections.length === 0) return;
+                    if (!chartEl) return;
                     const ctx = chartEl.getContext('2d');
                     
                     if (App.charts.amortization) App.charts.amortization.destroy();
                     
+                    const labels = projections.map(p => `Year ${p.year}`);
+                    const loanData = projections.map(p => p.loanBalance);
+
                     if (state.loanType === 'margin') {
-                        const labels = projections.map(p => `Year ${p.year}`);
+                        const annualInterestData = projections.map(p => p.annualInterestPaid);
+                        const equityData = projections.map(p => p.equity);
+                        
                         App.charts.amortization = new Chart(ctx, {
-                            type: 'line', 
-                            data: { labels: labels, datasets: [{ label: 'Margin Loan Balance', data: projections.map(p => p.loanBalance), borderColor: colors.strategy.appreciation, backgroundColor: hexToRgba(colors.strategy.appreciation, 0.2), fill: 'start', tension: 0.1 }] },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `Balance: ${formatCurrency(c.raw)}` } } }, scales: { y: { ticks: { callback: v => formatCurrency(v) } } } }
+                            type: 'bar', // Use bar chart as base for annual interest
+                            data: { labels: labels, datasets: [
+                                { // Annual Interest Paid (Bars on Y-Axis 2)
+                                    type: 'bar',
+                                    label: 'Annual Interest Paid',
+                                    data: annualInterestData,
+                                    backgroundColor: hexToRgba(colors.status.negative, 0.6),
+                                    yAxisID: 'yCurrency',
+                                    order: 3,
+                                },
+                                { // Loan Balance (Line on Y-Axis 1)
+                                    type: 'line',
+                                    label: 'Loan Balance',
+                                    data: loanData,
+                                    borderColor: colors.strategy.appreciation, 
+                                    backgroundColor: hexToRgba(colors.strategy.appreciation, 0.1), 
+                                    fill: false, 
+                                    tension: 0.2,
+                                    borderWidth: 3,
+                                    yAxisID: 'yValue',
+                                    order: 1,
+                                    pointRadius: 4
+                                },
+                                { // Total Equity (Line on Y-Axis 1)
+                                    type: 'line',
+                                    label: 'Total Equity',
+                                    data: equityData,
+                                    borderColor: colors.strategy.valueadd, 
+                                    backgroundColor: hexToRgba(colors.strategy.valueadd, 0.1), 
+                                    fill: false, 
+                                    tension: 0.2,
+                                    borderWidth: 3,
+                                    borderDash: [5, 5],
+                                    yAxisID: 'yValue',
+                                    order: 2,
+                                    pointRadius: 4
+                                }
+                            ] },
+                            options: { 
+                                responsive: true, 
+                                maintainAspectRatio: false, 
+                                interaction: { mode: 'index', intersect: false },
+                                plugins: { 
+                                    legend: { position: 'bottom' }, 
+                                    datalabels: { display: false },
+                                    tooltip: { 
+                                        mode: 'index', 
+                                        intersect: false, 
+                                        callbacks: { 
+                                            label: c => {
+                                                if (c.dataset.type === 'bar') return `Annual Interest: ${formatCurrency(c.raw, 0)}`;
+                                                return `${c.dataset.label}: ${formatCurrency(c.raw, 0)}`;
+                                            }
+                                        } 
+                                    } 
+                                }, 
+                                scales: { 
+                                    x: { grid: { display: false } },
+                                    yValue: { 
+                                        type: 'linear', position: 'left', 
+                                        ticks: { callback: v => formatCurrency(v, 0) },
+                                        title: { display: true, text: 'Loan Balance & Equity ($)' },
+                                        grid: { color: '#e5e7eb' }, 
+                                    },
+                                    yCurrency: { 
+                                        type: 'linear', position: 'right',
+                                        ticks: { callback: v => formatCurrency(v, 0) },
+                                        title: { display: true, text: 'Annual Interest Paid ($)' },
+                                        grid: { drawOnChartArea: false }, 
+                                        min: 0
+                                    }
+                                } 
+                            }
                          });
                         return;
                     }
 
-                    const labels = projections.map(p => `Year ${p.year}`);
-                    const loanData = projections.map(p => p.loanBalance);
+                    // Default Amortizing Loan View (Fixed/ARM)
                     const equityData = projections.map(p => p.equity);
 
                     App.charts.amortization = new Chart(ctx, {
@@ -2287,8 +2649,28 @@
                         },
                         options: {
                             responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { position: 'bottom' }, datalabels: { display: false }, tooltip: { mode: 'index', intersect: false, callbacks: { footer: (items) => { const e = items.find(i => i.dataset.label === 'Equity')?.raw || 0, l = items.find(i => i.dataset.label === 'Loan Balance')?.raw || 0; return `Total Property Value: ${formatCurrency(e + l, 0)}`; } } } },
-                            scales: { x: { grid: { display: false } }, y: { stacked: true, ticks: { callback: v => formatCurrency(v) }, title: { display: true, text: 'Total Property Value' } } }
+                            plugins: { 
+                                legend: { position: 'bottom' }, 
+                                datalabels: { display: false }, // Explicitly disable datalabels
+                                tooltip: { 
+                                    mode: 'index', 
+                                    intersect: false, 
+                                    callbacks: { 
+                                        label: c => `${c.dataset.label}: ${formatCurrency(c.raw, 0)}`, // Tooltip formats value
+                                        footer: (items) => { const e = items.find(i => i.dataset.label === 'Equity')?.raw || 0, l = items.find(i => i.dataset.label === 'Loan Balance')?.raw || 0; return `Total Property Value: ${formatCurrency(e + l, 0)}`; } 
+                                    } 
+                                } 
+                            },
+                            scales: { 
+                                x: { grid: { display: false } }, 
+                                y: { 
+                                    stacked: true, 
+                                    ticks: { 
+                                        callback: v => formatCurrency(v, 0) // Y-axis formats ticks
+                                    }, 
+                                    title: { display: true, text: 'Total Property Value ($)' } 
+                                } 
+                            }
                         }
                     });
                 },
@@ -2448,14 +2830,39 @@
                 },
 
                 setupOutputListeners() {
-                   const wealthToggle = document.getElementById(App.config.dom.toggles.wealthChartToggle);
-                   if (wealthToggle) wealthToggle.addEventListener('change', () => App.ui.updateWealthProjectionChart(App.lastResults));
+                    const wealthToggle = document.getElementById(App.config.dom.toggles.wealthChartToggle);
+                    if (wealthToggle) wealthToggle.addEventListener('change', () => App.ui.updateWealthProjectionChart(App.lastResults));
 
-                   const breakdownToggle = document.getElementById(App.config.dom.toggles.breakdownToggle);
-                   if (breakdownToggle) breakdownToggle.addEventListener('change', () => App.ui.updateBreakdownChart(App.lastResults));
+                    const breakdownToggle = document.getElementById(App.config.dom.toggles.breakdownToggle);
+                    if (breakdownToggle) breakdownToggle.addEventListener('change', () => App.ui.updateBreakdownChart(App.lastResults));
 
-                   const exitToggle = document.getElementById(App.config.dom.toggles.exitChartToggle);
-                   if (exitToggle) exitToggle.addEventListener('change', () => App.ui.updateOptimalExitChart(App.lastResults));
+                    const exitToggle = document.getElementById(App.config.dom.toggles.exitChartToggle);
+                    if (exitToggle) exitToggle.addEventListener('change', () => App.ui.updateOptimalExitChart(App.lastResults));
+                    
+                    const timeToggle = document.getElementById(App.config.dom.toggles.timeHorizonToggle);
+                    if (timeToggle) timeToggle.addEventListener('change', () => App.ui.updateKeyMetrics(App.lastResults));
+                    
+                    const taxToggle = document.getElementById(App.config.dom.toggles.taxStatusToggle);
+                    if (taxToggle) taxToggle.addEventListener('change', () => App.ui.updateKeyMetrics(App.lastResults));
+                    
+                    // NEW: Projections Chart Toggles and Listeners
+                    const projectionsToggle = document.getElementById(App.config.dom.outputs.projectionsChartToggle);
+                    const projectionsSelector = document.getElementById(App.config.dom.outputs.projectionsDataSelector);
+
+                    const toggleProjectionView = () => {
+                        const isChart = projectionsToggle.checked;
+                        document.getElementById('projectionsTableWrapper').classList.toggle('hidden', isChart);
+                        document.getElementById('analysisChartContainer').classList.toggle('hidden', !isChart);
+                        if (isChart) {
+                            App.ui.renderProjectionsDataSelector();
+                            App.ui.updateProjectionsChart(App.lastResults);
+                        } else {
+                            if (App.charts.projections) App.charts.projections.destroy();
+                        }
+                    };
+
+                    if (projectionsToggle) projectionsToggle.addEventListener('change', toggleProjectionView);
+                    if (projectionsSelector) projectionsSelector.addEventListener('change', () => App.ui.updateProjectionsChart(App.lastResults));
                },
                 
                 handleInputChange(e, key) {
@@ -2492,6 +2899,7 @@
                     
                     if (loanTermInput) {
                         if (loanType === 'fixed15') loanTermInput.value = 15;
+                        else if (loanType === 'margin') loanTermInput.value = document.getElementById(dom.inputs.holdPeriod).value; // Loan Term defaults to Hold Period for Margin
                         else loanTermInput.value = 30;
                     }
                 },

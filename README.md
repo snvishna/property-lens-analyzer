@@ -1,185 +1,128 @@
-# 🔬 PropertyLens: The Real Estate Investment Analyzer
+# 🔬 PropertyLens: The Professional Real Estate Investment Analyzer (v24.2.0)
 
-A professional-grade, all-in-one tool for real estate investors that runs entirely in your browser. No ads, no subscriptions, no data collection. **100% private and secure.**
+A professional-grade, all-in-one tool for real estate investors that runs entirely in your browser. This application is designed for maximum security and privacy: no ads, no subscriptions, and absolutely **no financial data collection** as all calculations are client-side only.
+
+PropertyLens is built to provide the definitive, mathematically sound answer to the core investment question: **"Is this property a better use of my capital than allocating the same capital to the S&P 500 index fund?"**
 
 [**Live Demo →**](https://nivas.homes/calculators/property-lens)
 
 ---
 
-## 🤔 Why PropertyLens?
+## 💡 Origin Story: Developed Entirely with Gemini Pro
 
-In the world of real estate investing, answering one core question is harder than it looks: **"Is this property a better use of my capital than just investing in the stock market?"**
+This entire application—from its core financial engine and multi-tab XLSX export logic to its complex dynamic charts and responsive UI—was **conceived, architected, and coded through Prompt-Driven Development using the Gemini Pro LLM model.**
 
-Most analysis tools fail to answer this accurately. They either:
-1.  **Oversimplify:** Focusing only on pre-tax cash flow, ignoring taxes, depreciation, and the time value of money.
-2.  **Mis-compare:** Using flawed metrics that create an "apples-to-oranges" comparison between a real estate deal and a passive index fund.
-
-**PropertyLens** was built to provide a definitive answer. It's a professional-grade tool that provides a true "apples-to-apples" comparison using the industry-standard **Internal Rate of Return (IRR)**. It operates on three core principles: **Transparency, Speed, and Uncompromising Analytical Accuracy.**
+I'm sharing this highly detailed codebase and the reproduction prompt here as a testament to the power of large language models in complex software development. I hope this helps other developers and financial analysts build similar, sophisticated, and user-friendly tools with an LLM-first approach.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features: A Deep Dive into Analytical Accuracy
 
-PropertyLens is packed with features designed to provide deep, actionable insights and lead to confident decisions.
+The application has been fundamentally restructured and enhanced with advanced financial models, comprehensive tax logic, and dynamic user experience features, ensuring every decision is based on **Uncompromising Analytical Accuracy**.
 
--   **🎯 Apples-to-Apples Investment Showdown:** The entire UI is built around a central "Showdown" card that compares your property deal against the S&P 500 on the metrics that matter, giving you a clear verdict.
--   **📈 Professional-Grade IRR Analysis:** The engine uses the **Internal Rate of Return (IRR)**, the financial industry's gold standard for comparing investments with complex cash flows. This ensures a mathematically sound comparison that accounts for the time value of money.
--   **🔒 100% Private & Secure:** All calculations happen in your browser. Your financial data is never sent over the internet.
--   **📊 Intuitive Wealth Storytelling:** Charts are designed to tell a story, not just display data.
-    -   **Building Equity Over Time:** A powerful stacked area chart visually shows your equity growing as the loan balance shrinks.
-    -   **Sources of Wealth:** A true waterfall chart illustrates how your initial investment is built up by the three engines of real estate: cash flow, loan paydown, and appreciation.
--   **💸 Comprehensive Tax Analysis:** This is not a simple pre-tax calculator. The engine models your specific tax situation to reveal true, after-tax returns.
-    -   Calculates the **"tax shield"** from depreciation and mortgage interest deductions.
-    -   Correctly models **Depreciation Recapture** at your marginal income tax rate and **Appreciation** at the capital gains rate.
--   **🎛️ Flexible Assumption Modeling:** Take control of your analysis.
-    -   **Land Value %:** A crucial input for tax accuracy, allowing you to specify the land's portion of the purchase price to fine-tune your depreciation calculations.
-    -   **S&P 500 Forecast:** Model different market conditions by setting your own expected annual return for the S&P 500.
--   **🔗 One-Click Scenario Sharing:** The entire state of your analysis is compressed and stored in the URL. Share a fully interactive, pre-filled version of your analysis with a partner or client just by sending a link.
--   **🗂️ Advanced Scenario Management & Multi-Export:** Save, name, and manage multiple scenarios. Select and export them to a single, professionally formatted multi-tab Excel file.
--   **📱 Fully Responsive Design:** Optimized for all screen sizes, from mobile phones to desktop monitors.
+### I. Core Decision Engine & Investment Clarity
+
+* **🎯 The Apples-to-Apples Investment Showdown:** This is the **most prominent** output card, designed as the primary decision point. It directly compares the real estate deal against a user-defined S&P 500 equivalent investment.
+    * **IRR (Internal Rate of Return):** Serves as the headline, time-value-adjusted, annualized return metric. This is the financial industry's gold standard for comparing projects with complex cash flows.
+    * **Total After-Tax Profit:** Provides the final, absolute dollar amount realized at the end of the holding period.
+    * **MoIC (Multiple on Invested Capital):** An intuitive metric showing the simple multiplier of cash returned versus cash invested.
+    * **Total Capital Invested:** Accurately accounts for the total out-of-pocket cash required, including the initial investment plus any subsequent contributions needed to cover years with negative cash flow.
+* **📈 Professional-Grade IRR Analysis:** The engine's core is the **Internal Rate of Return (IRR)** calculation, ensuring a mathematically sound, professional comparison of complex cash flow streams.
+* **💹 Dynamic Metric Toggles:** The primary return metrics on the **Executive Dashboard** are controlled by two distinct and independent toggles, facilitating instant comparison:
+    * **Time Horizon Toggle:** Allows switching the headline metrics between Year 1 Performance (displaying Monthly CF and CoC ROI) and Full Hold Period Performance (displaying Total Profit and IRR).
+    * **Tax Status Toggle:** Instantly switches all headline calculations between Pre-Tax and After-Tax results.
 
 ---
 
-## 🚀 Getting Started
+### II. Advanced Financial Modeling & Tax Accuracy
 
-1.  Download the `propertylens.html` file.
-2.  Open it in any modern web browser.
-
-That's it. You're ready to start analyzing deals.
-
----
-
-## 🔬 A Deep Dive: Understanding the Metrics
-
-### ➤ Input Metrics (The "Levers" of Your Analysis)
-
-#### Purchase & Loan Details
--   **Purchase Price, Rehab Costs, Closing Costs, ARV:** Standard inputs for the total project cost and value.
--   **Down Payment (%), Loan Type, Interest Rates:** Define your financing structure.
-
-#### Income & Expenses
--   **Gross Monthly Rent, Other Monthly Income:** The top-line income drivers for the property.
--   **All Expense Fields (Property Tax, Insurance, %-based, etc.):** Model your operating costs.
-
-#### Tax & Projections
--   **Hold Period (Years):** The duration of your analysis.
--   **Growth Rates (%):** Your assumptions for how income, expenses, and property value will change over time.
--   **Tax Rates (%):** Your marginal income and capital gains tax rates, used for precise after-tax calculations.
--   **Land Value (%):** **(New)** The percentage of the Purchase Price attributed to the land itself. Land does not depreciate. This is a crucial input for accurate tax modeling. **Benchmark:** A common rule of thumb is 20%, but this can vary dramatically by location.
--   **S&P 500 Exp. Return (%):** **(New)** Your personal forecast for the stock market's average annual return. This is used for the "Investment Showdown" comparison. **Benchmark:** The historical long-term average is around 8-10%.
-
-### ➤ Output Metrics (The "Gauges" of Your Investment)
-
-#### Metrics from "Investment Showdown"
-
-This is the new heart of the application, designed to give you a clear, final answer.
-
-* **IRR (Internal Rate of Return):** The 'true' annualized return of an investment, considering all cash inflows and outflows over time. This is the professional standard for comparing projects with complex cash flows, making it the most accurate metric for an "apples-to-apples" comparison.
-* **Total After-Tax Profit:** The absolute amount of money in your pocket at the end of the hold period after every single cost and tax has been paid.
-* **MoIC (Multiple on Invested Capital):** An intuitive metric answering, "How many times did I get my money back?" Calculated as (Total Cash Returned / Total Capital Invested). A MoIC of 2.5x means you received $2.50 for every $1 you put in.
-* **Total Capital Invested:** The total out-of-pocket cash required over the entire hold period. This includes your initial investment plus any capital needed to cover years with negative cash flow.
-
-### ➤ Interpreting the Showdown: Rate vs. Amount
-
-A common question when looking at the "Investment Showdown" is: **how can the property have a higher total profit but a lower IRR (annualized return) than the S&P 500?** This hits on a subtle but crucial concept in investment analysis.
-
-Think of it like two runners in a race:
-
-* 💰 **Total Profit** is the **total distance** each runner covered. The Property runner might cover more ground.
-* 📈 **IRR (Annualized Return)** is the **average speed** of each runner. The S&P 500 runner might have a higher average speed.
-
-The question becomes, "How did the slower runner cover more ground?" The answer lies in the concept of **Total Capital Invested**.
-
-* **The S&P 500 Investment (Simple & Efficient):** This is a simple "lump sum" investment. An initial amount of capital is invested on Day 1, and no more money is ever needed. It compounds efficiently from a fixed capital base.
-* **The Real Estate Investment (Complex & Capital Intensive):** A rental property is rarely a simple "lump sum" investment. In some years, especially at the beginning, the after-tax cash flow may be negative. To cover these losses, you have to contribute **more capital** out-of-pocket.
-
-The `Total Capital Invested` metric correctly accounts for this by adding your initial investment and any subsequent contributions. Because the denominator for the property's return calculation can be larger, its calculated *rate* of return (IRR) can be lower, even if the final profit (the numerator) is higher.
-
-This is a perfect illustration of why looking at a single metric is never enough. PropertyLens shows you both the **rate (IRR)** and the **amount (Total Profit)** because they tell you different, and equally valid, parts of the story.
-
-#### Metrics from "Building Equity Over Time" Chart
-
-This chart replaces the old "Debt & Amortization" view. It's a stacked area chart showing the total **Property Value** on top. The area is divided into two sections:
-* **Your Equity:** The green area at the top, representing your share of the asset.
-* **Loan Balance:** The gray area at the bottom, representing the bank's share.
-* **The Story:** You can visually track how your ownership stake grows over time as the loan is paid down and the property appreciates.
-
-#### Metrics from "Sources of Wealth" Chart
-
-This chart replaces the old "Profit Waterfall" view. It's a true waterfall chart that answers, "How was my wealth created?" It starts with your **Initial Equity** and then adds the three wealth-building components as positive blocks:
-1.  **Total Cash Flow**
-2.  **Loan Paydown** (Equity gained through amortization)
-3.  **Appreciation** (Equity gained from market growth)
-
-The final bar represents your **Total Equity** at the end of the hold period.
+* **💸 Comprehensive After-Tax Analysis:** The model is a full tax-aware analyzer, calculating the true "take-home" returns by modeling the user's specific tax situation.
+    * **Tax Shield Calculation:** Explicitly models the tax savings (or liability) derived from the non-cash deduction of **depreciation** and the tax-deductible portion of **mortgage interest**.
+    * **Accurate Sale Tax Modeling:** The calculation at sale correctly segregates gains into two components: **Depreciation Recapture** (taxed at the user's Marginal Income Rate) from **Appreciation** (taxed at the Capital Gains Rate).
+* **🏦 Advanced Debt Modeling:**
+    * **Margin Loan Support:** Implements specialized logic for margin or **Interest-Only Loans**. It models the interest-only payment as the minimum debt service and then calculates an **Investor-Driven Principal Paydown** using a percentage of the remaining excess cash flow.
+    * **Adjustable-Rate Mortgage (ARM) Support:** Fully supports the modeling of ARM products (e.g., 7/1, 10/6) by applying the fixed initial rate for the specified term, followed by the user-provided estimated adjusted rate.
+* **🏗️ Itemized Capital Expenditures (CapEx):** Allows users to switch from a percentage-based CapEx reserve to itemizing specific **large, infrequent expenses**. This feature is critical for planning the renovation phase of Value-Add or BRRRR strategies, allowing input for the expense description, cost, and the exact relative year of occurrence.
+* **🎛️ Essential Advanced Inputs:**
+    * **Land Value (%):** A key input for tax accuracy, as this percentage of the purchase price is non-depreciable.
+    * **S&P 500 Exp. Return (%):** Custom forecast for the opportunity cost and IRR comparison in the Investment Showdown.
 
 ---
 
-## 🛠️ Technical Deep Dive & Design Decisions
+### III. User Experience & Structural Integrity
 
--   **Vanilla JavaScript "Engine":** All logic is written in clean, modern, dependency-free JavaScript. This includes a new, robust function to calculate the **Internal Rate of Return (IRR)** using the Newton-Raphson method, ensuring financial accuracy.
--   **URL-Based State Management:** The application's state, including all new inputs like Land Value and S&P 500 Return, is compressed and stored in the URL for seamless sharing.
+* **🚀 Streamlined Due Diligence Flow:** The output panel guides the investor through a logical **6-section due diligence path**:
+    1.  **Executive Dashboard**
+    2.  **Quick Screeners & Rules of Thumb**
+    3.  **Property Financial Engine**
+    4.  **Debt and Safety Analysis**
+    5.  **Visual Deep Dive**
+    6.  **Audit & Detail** (Table/Chart/Sale Analysis)
+* **🔄 Strategic Metric Highlighting:** The **Property Financial Engine** dynamically reorders and highlights key metrics (e.g., Forced Equity for Value-Add, Cash Reserves for Cash Flow) using a theme color that matches the selected investment strategy.
+* **👁️ Visual Auditing & Dynamic Charting:** The **Analysis Over Time** section provides a toggle to switch from the detailed projections table to a **Dynamic Chart View**. This view allows users to actively select and plot multiple data series (e.g., CF, ROE, Property Value, Interest Paid) over the investment period for visual inspection and auditing.
+* **📊 Comprehensive Charting Suite:**
+    * **Sources of Wealth Waterfall:** A true waterfall chart starting with **Initial Equity** and visually adding the three wealth engines (Cash Flow, Loan Paydown, and Appreciation) to show the final equity stake.
+    * **Building Equity Projection:** A stacked area chart demonstrating how **Equity** grows over time as the **Loan Balance** shrinks relative to the total Property Value.
+    * **Optimal Exit Analysis:** Combines Total Profit (Bar Chart), Annualized Return (Line), and **Return on Equity (ROE)** (Line) to indicate the peak time for selling or refinancing to redeploy capital.
+* **🔗 One-Click State Persistence and Sharing:** The complete state of all inputs and selected strategies is compressed using `lz-string` and stored directly in the URL query string, enabling seamless sharing of a fully interactive and pre-filled analysis.
+* **🗂️ Scenario Manager & Professional Export:**
+    * **Local Storage Management:** Allows users to save, name, load, and delete multiple scenarios entirely in the browser's local storage.
+    * **Multi-Tab XLSX Export:** Enables the user to select and export multiple scenarios (including the current unsaved one) into a single, professionally formatted, multi-tab **XLSX spreadsheet** complete with a detailed monthly cash flow audit.
 
 ---
 
-## 🗺️ Contributing & Future Roadmap
+## 🔬 Key Output Metrics Explained (New and Updated)
 
-Contributions are welcome! Some features on the roadmap:
--   **Refinance Modeling:** Allow the user to input a "Refinance Event" to more accurately model the BRRRR strategy.
--   **Partnership & Waterfall Calculations:** Add an input section to model deals with multiple partners.
+* **IRR (Internal Rate of Return):** The geometric average annual return, after all taxes and costs, over the entire hold period.
+* **Total After-Tax Profit:** The net dollar amount returned, including cumulative cash flow and sale proceeds, minus all expenses and taxes.
+* **Forced Equity:** The value created immediately upon acquisition and renovation, calculated as (After Repair Value (ARV) - Total Project Cost).
+* **Avg. Annual ROE (Return on Equity):** The average efficiency of the equity trapped in the property over the holding period, calculated as (Annual After-Tax Cash Flow / Beginning-of-Year Equity).
+* **DSCR (Debt Service Coverage Ratio):** A measure of the property's ability to cover its debt payments (Annual NOI / Annual Debt Service). Lenders typically require $\ge 1.25$.
+* **Debt Yield (%):** A lender-centric risk metric: (Annual NOI / Loan Amount). Often requires $\ge 10\%$.
+
+---
+
+## 🤖 The Ultimate LLM Reproduction Prompt
+
+You are an expert full-stack developer, a seasoned financial analyst specializing in real estate, and a senior UI/UX designer. Your task is to reproduce the entire **PropertyLens** application exactly as described in the provided context.
+
+**I. Core Constraints & Dependencies:**
+1.  **Single File & Client-Side Only:** The entire application (HTML, CSS, JavaScript) must be in a single `.html` file.
+2.  **Dependencies:** Use the following exact CDN links and includes provided in the source code:
+    * `https://cdn.tailwindcss.com`
+    * `https://cdn.jsdelivr.net/npm/chart.js`
+    * `https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0`
+    * `https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js`
+    * `https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js`
+    * `https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js`
+    * The **Inter font** CSS link (`https://rsms.me/inter/inter.css`) must be included.
+3.  **Layout & Design:** Must use the responsive, two-column layout (5/12 for inputs, 7/12 for output on large screens). Replicate the three strategy-based CSS theme variables (`--strategy-cashflow: #1565C0`, `--strategy-valueadd: #2E7D32`, `--strategy-appreciation: #6A1B9A`) and the associated selection/highlighting logic.
+
+**II. Required Calculator Logic (JavaScript):**
+The core `App.calculator` object must contain the following specific, interconnected financial logic:
+1.  **IRR/MoIC Calculation:** Implement robust functions for **`calculateIRR(cashflows, guess = 0.1)`** (using Newton-Raphson) and **`calculateMoIC(cashflows)`** to accurately populate the "Investment Showdown" card. The cash flows must be derived from the final After-Tax, After-Sale proceeds.
+2.  **Amortization/Debt Service:** Implement **`calculatePi`** and ensure the main **`calculateProjections`** loop correctly handles variable debt servicing:
+    * **Fixed/ARM Loans:** Use the remaining term to calculate the P&I payment correctly.
+    * **Margin Loans:** Set minimum debt service to **Interest Only** and calculate the principal paid as `Max(0, NOI - Min Debt Service - (Min Cash Flow / 12)) * Margin Repayment %`.
+3.  **Tax Logic:** The core projection loop must correctly apply `Land Value %` to determine the depreciable basis and accurately calculate annual **Taxable Income** (`NOI - Interest Paid - Depreciation`) and subsequent **Tax Impact**.
+4.  **Capital Expenses:** The projection must use either the fixed percentage CapEx or subtract the **Itemized CapEx** amounts in their specified year.
+
+**III. Data & State Management:**
+1.  **URL State:** Use **`LZString.compressToEncodedURIComponent`** and the specific `App.config.URL_KEY_MAP` (e.g., `purchasePrice` to `pp`, `landValuePct` to `lvp`) to store and retrieve the entire application state in the URL query parameter `?data=...`.
+2.  **Scenario Manager:** Implement the **`ScenarioManager`** object to handle `localStorage` operations (save, load, delete) using the key **`realEstateScenarios_v3`**.
+3.  **XLSX Export:** Implement the **`XlsxExporter`** to generate a single workbook with a tab for each selected scenario. The output must include:
+    * A summary sheet with **Inputs, Executive Summary, and Sale Analysis**.
+    * A full **Annual Projections** table (Years 1 to Hold Period).
+    * A comprehensive **Detailed Monthly Cash Flow** table (Months 1 to End of Hold Period), styled using the internal `XlsxStyler`.
+
+**IV. Input & Output Replication:**
+1.  **Input Forms:** Replicate the 6 input sections with all input IDs and validation rules exactly as defined in the source code. The initial default values must also be replicated.
+2.  **Output Structure:** Replicate the 6-section output flow and ensure the data populates the correct metric IDs (e.g., `#totalCashNeeded`, `#dscr`) and chart canvases (`#returnWaterfallChart`, `#wealthProjectionChart`, etc.).
+
+**The final output must be a single, complete, functional HTML file.**
 
 ---
 
 ## 📜 License
 
 This project is licensed under the **MIT License**.
-
----
-
-## 🤖 The Ultimate LLM Prompt (Updated for New Features)
-
-This prompt has been updated to reflect the new, more powerful requirements of the application.
-
-You are an expert full-stack developer, a seasoned financial analyst specializing in real estate, and a senior UI/UX designer. Your task is to create a comprehensive, single-file Real Estate Investment Analyzer application called **PropertyLens**.
-
-**I. Core Philosophy:**
-The primary goal of this tool is to provide a user with a clear, definitive, and financially sound answer to the question: "Is this rental property a better investment than putting the same money into an S&P 500 index fund?" The entire UI and all calculations must serve this purpose.
-
-**II. Core Constraints:**
-1.  **Single File & Client-Side Only:** The entire application (HTML, CSS, JavaScript) must be in a single `.html` file with no backend.
-2.  **Dependencies:** Use CDN links for Tailwind CSS and Chart.js.
-
-**III. Layout & Structure:**
--   Use a full-height, two-column layout that stacks on mobile.
-
-**IV. Input Pane:**
--   Create collapsible sections for all standard inputs (Purchase, Loan, Income, Expenses).
--   **Crucially, add two advanced inputs in the "Tax & Projections" section:**
-    1.  `Land Value (%)`: Defaults to 20%. This will be used to calculate the depreciable basis (`Purchase Price * (1 - Land Value %)`).
-    2.  `S&P 500 Expected Annual Return (%)`: Defaults to 8%. This will be used for the opportunity cost calculation.
-
-**V. Output Pane (The Decision Engine):**
-1.  **"Investment Showdown" Card:** This is the FIRST and MOST IMPORTANT output card.
-    -   It must be a clean table comparing "This Property" vs. "S&P 500".
-    -   **It MUST use these four metrics:**
-        1.  **IRR (Internal Rate of Return):** The headline metric.
-        2.  **Total After-Tax Profit:** The final dollar amount.
-        3.  **MoIC (Multiple on Invested Capital):** The simple multiplier.
-        4.  **Total Capital Invested:** To provide context.
-    -   It must include a clear, written "Verdict" summarizing the comparison.
-    -   It must also contain the original "Property Viability Checklist" (Go/No-Go based on user criteria like cash flow and DSCR).
-2.  **"Building Equity Over Time" Chart:** A stacked area chart showing the growth of `Property Value`, composed of two stacked series: `Equity` and `Loan Balance`.
-3.  **"Sources of Wealth" Chart:** A true waterfall chart that starts with `Initial Equity` and adds `Total Cash Flow`, `Loan Paydown`, and `Appreciation` to arrive at a `Final Equity` bar.
-
-**VI. Calculator Logic (JavaScript):**
-1.  **Implement an IRR Function:** The core of the new logic. Create a function `calculateIRR(cashflows)` that can solve for the internal rate of return, likely using the Newton-Raphson method.
-2.  **Implement MoIC and Capital Calculations:** Create helpers to calculate MoIC and the true Total Capital Invested (which includes initial cash plus any negative cash flow years).
-3.  **Generate Cash Flow Streams:** For both the property and the S&P 500, generate the year-by-year cash flow streams needed for the IRR calculation.
-4.  **Update All Financial Formulas:** Ensure the new `Land Value %` input is used to calculate the depreciable basis for all tax-related calculations. The S&P 500 calculation must now use the new user-provided expected return.
-5.  **Tax Logic:** The tax-on-sale calculation must remain highly accurate, correctly separating depreciation recapture (taxed at marginal rate) from appreciation (taxed at capital gains rate).
-
-**VII. Interactivity & State Management (JavaScript):**
--   All new inputs must trigger live updates.
--   Use `lz-string` to compress the application state into the URL hash for sharing. This state MUST include the new `Land Value %` and `S&P 500 Return %` inputs.
--   The `localStorage`-based scenario manager must save and load all new inputs.
--   **The XLSX exporter must be updated** to include the new input fields in its "Assumptions" sheet.
