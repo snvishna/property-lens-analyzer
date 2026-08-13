@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { ScenarioManager, type SavedScenario } from '../../lib/scenarioManager';
+import { exportScenariosToExcel } from '../../lib/exportExcel';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Label } from '../ui/Label';
 import { TooltipIcon } from '../ui/TooltipIcon';
 import { X, Download, Trash2, FolderOpen } from 'lucide-react';
 
@@ -124,7 +124,7 @@ export function ScenariosModal({ isOpen, onClose }: ScenariosModalProps) {
               Backup <TooltipIcon content="Export/Import all your scenarios as a JSON file backup" /> : 
             </span>
             <button 
-              onClick={() => ScenarioManager.exportToCsv()}
+              onClick={() => exportScenariosToExcel(ScenarioManager.getAll())}
               className="text-blue-600 font-medium flex items-center hover:underline"
             >
               <Download className="w-4 h-4 mr-1" />

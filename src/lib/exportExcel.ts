@@ -9,7 +9,7 @@ export function exportScenariosToExcel(scenarios: SavedScenario[]) {
 
   scenarios.forEach((scenario, index) => {
     // 1. Calculate projections using the engine
-    const data = calculateProjections(scenario.data);
+    const data = calculateProjections(scenario.data as any);
 
     // 2. Build Worksheet Data (AOA)
     const wsData: any[][] = [];

@@ -160,11 +160,12 @@ export function AnalysisOverTime() {
                 )}
                 
                 <Tooltip
-                  formatter={(value: number, name: string) => {
-                    const metric = METRICS.find(m => m.label === name);
-                    if (metric?.type === 'percent') return formatPercent(value);
-                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-                  }}
+                  formatter={(value: any, name: any) => [
+                  String(name).includes('Rate') || String(name).includes('Yield') || String(name).includes('Margin') || String(name).includes('Return')
+                    ? `${(Number(value) * 100).toFixed(1)}%`
+                    : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value)),
+                  name
+                ]}
                   labelStyle={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '8px' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                 />

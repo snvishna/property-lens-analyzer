@@ -29,15 +29,17 @@ export function MonthlyBreakdown() {
   const totalIncome = monthlyRent + otherIncome;
 
   const pAndI = (data.annualData[0]?.debtService || 0) / 12;
-  const taxes = (data.annualData[0]?.propertyTaxes || 0) / 12;
-  const management = (data.annualData[0]?.managementFees || 0) / 12;
-  const vacancy = (data.annualData[0]?.vacancyLoss || 0) / 12;
-  const maintenance = (data.annualData[0]?.maintenance || 0) / 12;
-  const capex = (data.annualData[0]?.capitalExpenditures || 0) / 12;
-  const insurance = (data.annualData[0]?.insurance || 0) / 12;
-  const hoa = (data.annualData[0]?.hoa || 0) / 12;
-  const utilities = (data.annualData[0]?.utilities || 0) / 12;
-  const otherExp = (data.annualData[0]?.otherExpenses || 0) / 12;
+  const taxes = store.propertyTaxesMonthly;
+  const management = totalIncome * store.managementPct;
+  const vacancy = totalIncome * store.vacancyPct;
+  const maintenance = totalIncome * store.maintenancePct;
+  const capex = totalIncome * store.capExPct;
+  const insurance = store.insuranceMonthly;
+  const hoa = store.hoaMonthly;
+  const utilities = store.useItemizedUtilities
+      ? (store.waterSewerMonthly + store.garbageMonthly + store.gasMonthly + store.electricMonthly)
+      : store.utilitiesMonthly;
+  const otherExp = store.otherExpensesMonthly;
 
   const expenseDataRaw = [
     { name: 'P&I', value: pAndI },
@@ -99,12 +101,12 @@ export function MonthlyBreakdown() {
                 dataKey="value"
                 stroke="none"
               >
-                {currentData.map((entry, index) => (
+                {currentData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value: any) => formatCurrency(Number(value))}
                 contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
               />
             </PieChart>

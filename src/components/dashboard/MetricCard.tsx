@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { HelpCircle, ChevronUp } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 interface MetricCardProps {

@@ -1,5 +1,4 @@
 import type { AppState } from '../types';
-import { decompressState, compressState } from './urlState';
 
 export interface SavedScenario {
   id: string;

@@ -54,8 +54,8 @@ export function DebtAmortization() {
               label={{ value: 'Total Property Value ($)', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 12, dy: 60 }}
             />
             <Tooltip
-              formatter={(value: number, name: string) => [
-                new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value),
+              formatter={(value: any, name: any) => [
+                new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value)),
                 name === 'loanBalance' ? 'Loan Balance' : 'Equity'
               ]}
               labelStyle={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '8px' }}
