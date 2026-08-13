@@ -1,3 +1,4 @@
+
 # 🔬 PropertyLens: The Professional Real Estate Investment Analyzer (v24.2.0)
 
 A professional-grade, all-in-one tool for real estate investors that runs entirely in your browser. This application is designed for maximum security and privacy: no ads, no subscriptions, and absolutely **no financial data collection** as all calculations are client-side only.
@@ -57,72 +58,5 @@ The application has been fundamentally restructured and enhanced with advanced f
     3.  **Property Financial Engine**
     4.  **Debt and Safety Analysis**
     5.  **Visual Deep Dive**
-    6.  **Audit & Detail** (Table/Chart/Sale Analysis)
-* **🔄 Strategic Metric Highlighting:** The **Property Financial Engine** dynamically reorders and highlights key metrics (e.g., Forced Equity for Value-Add, Cash Reserves for Cash Flow) using a theme color that matches the selected investment strategy.
-* **👁️ Visual Auditing & Dynamic Charting:** The **Analysis Over Time** section provides a toggle to switch from the detailed projections table to a **Dynamic Chart View**. This view allows users to actively select and plot multiple data series (e.g., CF, ROE, Property Value, Interest Paid) over the investment period for visual inspection and auditing.
-* **📊 Comprehensive Charting Suite:**
-    * **Sources of Wealth Waterfall:** A true waterfall chart starting with **Initial Equity** and visually adding the three wealth engines (Cash Flow, Loan Paydown, and Appreciation) to show the final equity stake.
-    * **Building Equity Projection:** A stacked area chart demonstrating how **Equity** grows over time as the **Loan Balance** shrinks relative to the total Property Value.
-    * **Optimal Exit Analysis:** Combines Total Profit (Bar Chart), Annualized Return (Line), and **Return on Equity (ROE)** (Line) to indicate the peak time for selling or refinancing to redeploy capital.
-* **🔗 One-Click State Persistence and Sharing:** The complete state of all inputs and selected strategies is compressed using `lz-string` and stored directly in the URL query string, enabling seamless sharing of a fully interactive and pre-filled analysis.
-* **🗂️ Scenario Manager & Professional Export:**
-    * **Local Storage Management:** Allows users to save, name, load, and delete multiple scenarios entirely in the browser's local storage.
-    * **Multi-Tab XLSX Export:** Enables the user to select and export multiple scenarios (including the current unsaved one) into a single, professionally formatted, multi-tab **XLSX spreadsheet** complete with a detailed monthly cash flow audit.
+    6.  *
 
----
-
-## 🔬 Key Output Metrics Explained (New and Updated)
-
-* **IRR (Internal Rate of Return):** The geometric average annual return, after all taxes and costs, over the entire hold period.
-* **Total After-Tax Profit:** The net dollar amount returned, including cumulative cash flow and sale proceeds, minus all expenses and taxes.
-* **Forced Equity:** The value created immediately upon acquisition and renovation, calculated as (After Repair Value (ARV) - Total Project Cost).
-* **Avg. Annual ROE (Return on Equity):** The average efficiency of the equity trapped in the property over the holding period, calculated as (Annual After-Tax Cash Flow / Beginning-of-Year Equity).
-* **DSCR (Debt Service Coverage Ratio):** A measure of the property's ability to cover its debt payments (Annual NOI / Annual Debt Service). Lenders typically require $\ge 1.25$.
-* **Debt Yield (%):** A lender-centric risk metric: (Annual NOI / Loan Amount). Often requires $\ge 10\%$.
-
----
-
-## 🤖 The Ultimate LLM Reproduction Prompt
-
-You are an expert full-stack developer, a seasoned financial analyst specializing in real estate, and a senior UI/UX designer. Your task is to reproduce the entire **PropertyLens** application exactly as described in the provided context.
-
-**I. Core Constraints & Dependencies:**
-1.  **Single File & Client-Side Only:** The entire application (HTML, CSS, JavaScript) must be in a single `.html` file.
-2.  **Dependencies:** Use the following exact CDN links and includes provided in the source code:
-    * `https://cdn.tailwindcss.com`
-    * `https://cdn.jsdelivr.net/npm/chart.js`
-    * `https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0`
-    * `https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js`
-    * `https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js`
-    * `https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js`
-    * The **Inter font** CSS link (`https://rsms.me/inter/inter.css`) must be included.
-3.  **Layout & Design:** Must use the responsive, two-column layout (5/12 for inputs, 7/12 for output on large screens). Replicate the three strategy-based CSS theme variables (`--strategy-cashflow: #1565C0`, `--strategy-valueadd: #2E7D32`, `--strategy-appreciation: #6A1B9A`) and the associated selection/highlighting logic.
-
-**II. Required Calculator Logic (JavaScript):**
-The core `App.calculator` object must contain the following specific, interconnected financial logic:
-1.  **IRR/MoIC Calculation:** Implement robust functions for **`calculateIRR(cashflows, guess = 0.1)`** (using Newton-Raphson) and **`calculateMoIC(cashflows)`** to accurately populate the "Investment Showdown" card. The cash flows must be derived from the final After-Tax, After-Sale proceeds.
-2.  **Amortization/Debt Service:** Implement **`calculatePi`** and ensure the main **`calculateProjections`** loop correctly handles variable debt servicing:
-    * **Fixed/ARM Loans:** Use the remaining term to calculate the P&I payment correctly.
-    * **Margin Loans:** Set minimum debt service to **Interest Only** and calculate the principal paid as `Max(0, NOI - Min Debt Service - (Min Cash Flow / 12)) * Margin Repayment %`.
-3.  **Tax Logic:** The core projection loop must correctly apply `Land Value %` to determine the depreciable basis and accurately calculate annual **Taxable Income** (`NOI - Interest Paid - Depreciation`) and subsequent **Tax Impact**.
-4.  **Capital Expenses:** The projection must use either the fixed percentage CapEx or subtract the **Itemized CapEx** amounts in their specified year.
-
-**III. Data & State Management:**
-1.  **URL State:** Use **`LZString.compressToEncodedURIComponent`** and the specific `App.config.URL_KEY_MAP` (e.g., `purchasePrice` to `pp`, `landValuePct` to `lvp`) to store and retrieve the entire application state in the URL query parameter `?data=...`.
-2.  **Scenario Manager:** Implement the **`ScenarioManager`** object to handle `localStorage` operations (save, load, delete) using the key **`realEstateScenarios_v3`**.
-3.  **XLSX Export:** Implement the **`XlsxExporter`** to generate a single workbook with a tab for each selected scenario. The output must include:
-    * A summary sheet with **Inputs, Executive Summary, and Sale Analysis**.
-    * A full **Annual Projections** table (Years 1 to Hold Period).
-    * A comprehensive **Detailed Monthly Cash Flow** table (Months 1 to End of Hold Period), styled using the internal `XlsxStyler`.
-
-**IV. Input & Output Replication:**
-1.  **Input Forms:** Replicate the 6 input sections with all input IDs and validation rules exactly as defined in the source code. The initial default values must also be replicated.
-2.  **Output Structure:** Replicate the 6-section output flow and ensure the data populates the correct metric IDs (e.g., `#totalCashNeeded`, `#dscr`) and chart canvases (`#returnWaterfallChart`, `#wealthProjectionChart`, etc.).
-
-**The final output must be a single, complete, functional HTML file.**
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**.

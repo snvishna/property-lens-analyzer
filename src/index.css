@@ -1,0 +1,26 @@
+@import url('https://rsms.me/inter/inter.css');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --strategy-cashflow: #3b82f6; /* bg-blue-500 */
+    --strategy-valueadd: #10b981; /* bg-emerald-500 */
+    --strategy-appreciation: #8b5cf6; /* bg-violet-500 */
+    --strategy-color: var(--strategy-cashflow);
+    --strategy-color-alpha: rgba(59, 130, 246, 0.15); /* bg-blue-500/15 */
+  }
+  
+  html { 
+    font-family: 'Inter', sans-serif; 
+    scroll-behavior: smooth; 
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+}
