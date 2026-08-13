@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AppState } from '../types';
 import { compressState, decompressState } from '../lib/urlState';
+import { debounce } from '../lib/utils';
 
 const defaultState: AppState = {
   strategy: 'cashflow',
@@ -56,9 +57,25 @@ const defaultState: AppState = {
   sp500ExpectedReturnPct: 0.08,
 };
 
-const urlParams = new URLSearchParams(window.location.search);
-const dataParam = urlParams.get('data');
+const getHashData = () => {
+  const hash = window.location.hash;
+  if (hash.startsWith('#data=')) {
+    return hash.substring(6);
+  }
+  return null;
+}
+
+const dataParam = getHashData();
 const initialState = dataParam ? { ...defaultState, ...decompressState(dataParam) } : defaultState;
+
+const syncToUrl = debounce((state: AppState) => {
+  const stateToSerialize = { ...state };
+  delete (stateToSerialize as any).updateState;
+  delete (stateToSerialize as any).resetState;
+  
+  const compressed = compressState(stateToSerialize);
+  window.history.replaceState(null, '', `#data=${compressed}`);
+}, 500);
 
 interface AppStore extends AppState {
   updateState: (updates: Partial<AppState>) => void;
@@ -70,22 +87,12 @@ export const useAppStore = create<AppStore>((set) => ({
   updateState: (updates) => {
     set((state) => {
       const newState = { ...state, ...updates };
-      // Only serialize the actual state properties, not the functions
-      const stateToSerialize = { ...newState };
-      delete (stateToSerialize as any).updateState;
-      delete (stateToSerialize as any).resetState;
-      
-      const compressed = compressState(stateToSerialize);
-      const url = new URL(window.location.href);
-      url.searchParams.set('data', compressed);
-      window.history.replaceState({}, '', url.toString());
+      syncToUrl(newState);
       return newState;
     });
   },
   resetState: () => {
     set(defaultState);
-    const url = new URL(window.location.href);
-    url.searchParams.delete('data');
-    window.history.replaceState({}, '', url.toString());
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
   }
 }));

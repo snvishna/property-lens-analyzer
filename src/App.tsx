@@ -1,43 +1,71 @@
 import { useState } from 'react'
-import { Settings } from 'lucide-react'
+import * as React from 'react'
 import { StrategySelector } from './components/forms/StrategySelector'
 import { PurchaseForm } from './components/forms/PurchaseForm'
 import { DebtForm } from './components/forms/DebtForm'
 import { OperationsForm } from './components/forms/OperationsForm'
 import { TaxForm, RefinanceForm } from './components/forms/TaxAndRefiForms'
-import { SettingsModal } from './components/forms/SettingsModal'
 import { ExecutiveSummary } from './components/dashboard/ExecutiveSummary'
 import { QuickRules } from './components/dashboard/QuickRules'
 import { AuditDetail } from './components/dashboard/AuditDetail'
 import { WealthWaterfall } from './components/charts/WealthWaterfall'
 import { EquityProjection } from './components/charts/EquityProjection'
+import { SettingsModal } from './components/forms/SettingsModal'
+import { ScenariosModal } from './components/forms/ScenariosModal'
+import { useAppStore } from './store/useAppStore'
+import { Settings, RefreshCw, Bookmark } from 'lucide-react'
 import { Accordion } from './components/ui/Accordion'
 
 function App() {
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const strategy = useAppStore(state => state.strategy)
+  const resetState = useAppStore(state => state.resetState)
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
+  const [isScenariosOpen, setIsScenariosOpen] = React.useState(false)
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset all inputs to defaults?')) {
+      resetState();
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col">
-      <header className="flex-shrink-0 bg-white/80 backdrop-blur-md border-b z-10 border-slate-200 sticky top-0">
+    <div className={`min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans theme-${strategy}`}>
+      <header className="flex-shrink-0 bg-slate-100/80 backdrop-blur-sm border-b z-10 border-slate-200">
         <div className="container mx-auto px-4 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-4">
+            
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
-                <span className="text-xl text-yellow-500">Lens</span>
+              <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                PL
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 leading-tight">PropertyLens</h1>
-                <p className="text-slate-500 text-sm leading-tight">Institutional Real Estate Analyzer</p>
+                <p className="text-slate-500 text-sm leading-tight">The Professional Real Estate Investment Analyzer</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setSettingsOpen(true)}
-                className="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                title="Settings & BYOK"
+                onClick={() => setIsScenariosOpen(true)}
+                className="p-2 rounded-full text-slate-500 hover:text-strategy hover:bg-strategy/10 transition-colors flex items-center gap-1.5 font-medium text-sm"
+                title="Manage Scenarios"
               >
-                <Settings className="w-6 h-6" />
+                <Bookmark className="w-5 h-5" />
+                <span className="hidden sm:inline">Scenarios</span>
+              </button>
+              <button 
+                onClick={handleReset}
+                className="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+                title="Reset All Inputs"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+                title="Settings & API Keys"
+              >
+                <Settings className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -85,7 +113,14 @@ function App() {
         
       </main>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
+      <ScenariosModal 
+        isOpen={isScenariosOpen}
+        onClose={() => setIsScenariosOpen(false)}
+      />
     </div>
   )
 }

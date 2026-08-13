@@ -1,5 +1,6 @@
 import { useFinanceData } from "../../store/selectors"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card"
+import { MetricCard } from "./MetricCard"
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -22,35 +23,55 @@ export function ExecutiveSummary() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 relative z-10">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-            <p className="text-slate-400 text-sm font-medium">After-Tax IRR</p>
-            <p className="text-3xl font-bold text-white mt-1">{formatPercent(data.irrAfterTax)}</p>
-          </div>
-          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-            <p className="text-slate-400 text-sm font-medium">Equity Multiple</p>
-            <p className="text-3xl font-bold text-white mt-1">{data.equityMultiple.toFixed(2)}x</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MetricCard
+            title="After-Tax IRR"
+            value={formatPercent(data.irrAfterTax)}
+            status={data.irrAfterTax > 0.12 ? 'success' : data.irrAfterTax > 0.08 ? 'neutral' : 'warning'}
+            formula={
+              <span>
+                Based on Newton-Raphson approximation of all 30 years of cash flow and net equity at sale.
+              </span>
+            }
+            explanation="The Internal Rate of Return (IRR) is your true annualized return, accounting for the time value of money. This is the ultimate metric for comparing real estate against the stock market."
+          />
+          <MetricCard
+            title="Equity Multiple"
+            value={`${data.equityMultiple.toFixed(2)}x`}
+            status={data.equityMultiple >= 2.0 ? 'success' : 'neutral'}
+            formula={
+              <span>
+                <span className="text-slate-400">Total Cash In + Total Profit:</span> {formatCurrency(data.totalProfitAfterTax + data.totalCashInvested)} <br/>
+                <span className="text-slate-400">÷ Total Cash Invested:</span> {formatCurrency(data.totalCashInvested)} <br/>
+                <span className="text-slate-400">=</span> {data.equityMultiple.toFixed(2)}x
+              </span>
+            }
+            explanation="How much your initial capital multiplies over the holding period. A 2.0x multiple means you doubled your money."
+          />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-slate-400 text-sm">Total After-Tax Profit</p>
-            <p className="text-xl font-semibold text-emerald-400">{formatCurrency(data.totalProfitAfterTax)}</p>
-          </div>
-          <div>
-            <p className="text-slate-400 text-sm">Total Capital Invested</p>
-            <p className="text-xl font-semibold">{formatCurrency(data.totalCashInvested)}</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MetricCard
+            title="Total After-Tax Profit"
+            value={formatCurrency(data.totalProfitAfterTax)}
+            status="success"
+            explanation="The absolute dollar amount of profit you take home after all expenses, debt service, and taxes."
+          />
+          <MetricCard
+            title="Total Capital Invested"
+            value={formatCurrency(data.totalCashInvested)}
+            status="neutral"
+            explanation="Your total out-of-pocket cash (Down Payment + Closing Costs + Rehab + CapEx over holding period)."
+          />
         </div>
         
         <div className="pt-4 border-t border-slate-700">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-400">Avg. Unlevered Yield</span>
+            <span className="text-slate-400">Avg. Unlevered Yield (Cap Rate)</span>
             <span className="font-semibold">{formatPercent(data.unleveredYieldAvg)}</span>
           </div>
           <div className="flex justify-between items-center text-sm mt-2">
-            <span className="text-slate-400">Avg. Cash-on-Cash</span>
+            <span className="text-slate-400">Avg. Cash-on-Cash Return</span>
             <span className="font-semibold">{formatPercent(data.leveredYieldAvg)}</span>
           </div>
           <div className="flex justify-between items-center text-sm mt-2">
