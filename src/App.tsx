@@ -4,10 +4,17 @@ import { StrategySelector } from './components/forms/StrategySelector'
 import { PurchaseForm } from './components/forms/PurchaseForm'
 import { DebtForm } from './components/forms/DebtForm'
 import { OperationsForm } from './components/forms/OperationsForm'
+import { TargetForm } from './components/forms/TargetForm'
 import { TaxForm, RefinanceForm } from './components/forms/TaxAndRefiForms'
-import { ExecutiveSummary } from './components/dashboard/ExecutiveSummary'
-import { QuickRules } from './components/dashboard/QuickRules'
-import { AuditDetail } from './components/dashboard/AuditDetail'
+import { InvestmentShowdown } from './components/dashboard/InvestmentShowdown'
+import { ExecutivePerformance } from './components/dashboard/ExecutivePerformance'
+import { QuickScreeners } from './components/dashboard/QuickScreeners'
+import { PropertyFinancialEngine } from './components/dashboard/PropertyFinancialEngine'
+import { DebtSafetyAnalysis } from './components/dashboard/DebtSafetyAnalysis'
+import { MonthlyBreakdown } from './components/dashboard/MonthlyBreakdown'
+import { DebtAmortization } from './components/dashboard/DebtAmortization'
+import { SaleAnalysis } from './components/dashboard/SaleAnalysis'
+import { AnalysisOverTime } from './components/dashboard/AnalysisOverTime'
 import { WealthWaterfall } from './components/charts/WealthWaterfall'
 import { EquityProjection } from './components/charts/EquityProjection'
 import { SettingsModal } from './components/forms/SettingsModal'
@@ -29,8 +36,8 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans theme-${strategy}`}>
-      <header className="flex-shrink-0 bg-slate-100/80 backdrop-blur-sm border-b z-10 border-slate-200">
+    <div className={`lg:h-screen lg:overflow-hidden min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans theme-${strategy}`}>
+      <header className="flex-shrink-0 bg-white border-b z-10 border-slate-200 shadow-sm relative">
         <div className="container mx-auto px-4 lg:px-8 py-4">
           <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-4">
             
@@ -72,10 +79,10 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+      <main className="flex-1 lg:min-h-0 container mx-auto px-4 lg:px-8 flex flex-col lg:flex-row gap-8 py-6 lg:py-0">
         
         {/* Left Column: Inputs */}
-        <section className="lg:w-5/12 space-y-6">
+        <section className="lg:w-5/12 lg:h-full lg:overflow-y-auto custom-scrollbar lg:py-6 lg:pr-4 space-y-6">
           <Accordion title="Investment Strategy" open={true}>
             <StrategySelector />
           </Accordion>
@@ -103,12 +110,18 @@ function App() {
         </section>
 
         {/* Right Column: Outputs */}
-        <section className="lg:w-7/12 space-y-6">
-          <ExecutiveSummary />
-          <QuickRules />
+        <section className="lg:w-7/12 lg:h-full lg:overflow-y-auto custom-scrollbar lg:py-6 lg:pr-4 space-y-6">
+          <InvestmentShowdown />
+          <ExecutivePerformance />
+          <QuickScreeners />
+          <PropertyFinancialEngine />
+          <MonthlyBreakdown />
+          <DebtSafetyAnalysis />
+          <DebtAmortization />
           <WealthWaterfall />
           <EquityProjection />
-          <AuditDetail />
+          <SaleAnalysis />
+          <AnalysisOverTime />
         </section>
         
       </main>

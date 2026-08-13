@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "../../lib/utils"
-import { ChevronRight } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 
 export interface AccordionProps extends Omit<React.DetailsHTMLAttributes<HTMLDetailsElement>, 'title'> {
   title: React.ReactNode;
@@ -12,17 +12,19 @@ const Accordion = React.forwardRef<HTMLDetailsElement, AccordionProps>(
       <details 
         ref={ref}
         className={cn(
-          "group rounded-xl border border-slate-200 bg-white shadow-sm transition-colors open:bg-slate-50/50 open:border-slate-300", 
+          "group border border-slate-200 bg-white rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 overflow-hidden", 
           className
         )}
         open={open}
         {...props}
       >
-        <summary className="flex cursor-pointer list-none items-center justify-between p-5 font-semibold text-slate-800 transition-colors hover:text-slate-900 [&::-webkit-details-marker]:hidden">
+        <summary className="flex items-center justify-between p-5 lg:p-6 text-lg font-semibold text-slate-800 cursor-pointer list-none select-none active:scale-[0.99] transition-transform">
           {title}
-          <ChevronRight className="h-5 w-5 text-slate-500 transition-transform duration-200 group-open:rotate-90" />
+          <div className="text-slate-400 group-hover:text-blue-500 transition-colors duration-300 transform group-open:rotate-180">
+            <ChevronDown className="w-5 h-5" />
+          </div>
         </summary>
-        <div className="px-5 pb-5 pt-0">
+        <div className="p-5 lg:p-6 pt-0 animate-in fade-in slide-in-from-top-2 duration-300">
           {children}
         </div>
       </details>

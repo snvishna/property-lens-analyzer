@@ -1,6 +1,7 @@
 import { useFinanceData } from "../../store/selectors"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Accordion } from "../ui/Accordion"
+import { TooltipIcon } from "../ui/TooltipIcon"
 
 function formatCurrency(val: number) {
   if (Math.abs(val) >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
@@ -31,7 +32,15 @@ export function WealthWaterfall() {
   ]
 
   return (
-    <Accordion title="Wealth Projection (Returns)" open={true}>
+    <Accordion 
+      title={
+        <div className="flex items-center gap-2">
+          Wealth Projection (Returns)
+          <TooltipIcon content="Visual breakdown of how your wealth is generated: Initial Equity, accumulated Cash Flow, and accumulated Loan Paydown over the entire holding period." />
+        </div>
+      } 
+      open={true}
+    >
       <div className="h-80 w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>

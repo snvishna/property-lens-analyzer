@@ -8,34 +8,35 @@ const strategies = [
 ]
 
 export function StrategySelector() {
-  const store = useAppStore()
+  const { strategy, setInvestmentStrategy } = useAppStore();
 
   const handleSelect = (s: StrategyType) => {
-    store.updateState({ strategy: s })
+    setInvestmentStrategy(s)
     
-    // Update CSS variables for theme
     const root = document.documentElement;
     if (s === 'cashflow') {
-      root.style.setProperty('--strategy-color', '#1565C0');
-      root.style.setProperty('--strategy-color-alpha', 'rgba(21, 101, 192, 0.1)');
+      root.style.setProperty('--strategy-color', '#3b82f6');
+      root.style.setProperty('--strategy-color-alpha', 'rgba(59, 130, 246, 0.15)');
     } else if (s === 'valueadd') {
-      root.style.setProperty('--strategy-color', '#2E7D32');
-      root.style.setProperty('--strategy-color-alpha', 'rgba(46, 125, 50, 0.1)');
+      root.style.setProperty('--strategy-color', '#10b981');
+      root.style.setProperty('--strategy-color-alpha', 'rgba(16, 185, 129, 0.15)');
     } else {
-      root.style.setProperty('--strategy-color', '#6A1B9A');
-      root.style.setProperty('--strategy-color-alpha', 'rgba(106, 27, 154, 0.1)');
+      root.style.setProperty('--strategy-color', '#8b5cf6');
+      root.style.setProperty('--strategy-color-alpha', 'rgba(139, 92, 246, 0.15)');
     }
   }
 
   return (
     <div className="space-y-3">
       {strategies.map(s => {
-        const isSelected = store.strategy === s.id;
+        const isSelected = strategy === s.id;
         return (
           <label 
             key={s.id} 
-            className={`group flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
-              isSelected ? 'border-strategy bg-strategy/5 ring-1 ring-strategy' : 'border-slate-200 hover:border-strategy hover:bg-slate-50'
+            className={`group flex items-center p-4 rounded-xl cursor-pointer transition-all duration-300 bg-white ${
+              isSelected 
+                ? 'border-2 border-strategy shadow-sm' 
+                : 'border border-slate-200 hover:border-slate-300 hover:shadow-sm'
             }`}
             onClick={() => handleSelect(s.id as StrategyType)}
           >

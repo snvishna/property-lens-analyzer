@@ -12,9 +12,24 @@ const defaultState: AppState = {
   useLiveApis: false,
   
   purchasePrice: 500000,
-  rehabCosts: 50000,
-  closingCosts: 15000,
   arv: 650000,
+  closingCosts: 15000,
+  
+  // Property Profile
+  bedrooms: 3,
+  bathrooms: 2,
+  squareFeet: 1500,
+  yearBuilt: 1995,
+
+  // Target Metrics
+  targetMinCashFlow: 200,
+  targetMinCocRoi: 0.08,
+  targetMinForcedEquity: 0,
+  
+  // Rehab
+  rehabCosts: 50000,
+  useItemizedRehab: false,
+  itemizedRehab: [],
   
   loanType: 'fixed30',
   downPaymentPct: 0.20,
@@ -29,6 +44,15 @@ const defaultState: AppState = {
   propertyTaxesMonthly: 500,
   insuranceMonthly: 150,
   hoaMonthly: 0,
+  
+  // Utilities
+  useItemizedUtilities: false,
+  utilitiesMonthly: 0,
+  waterSewerMonthly: 0,
+  garbageMonthly: 0,
+  gasMonthly: 0,
+  electricMonthly: 0,
+  
   otherExpensesMonthly: 100,
   vacancyPct: 0.05,
   maintenancePct: 0.05,
@@ -79,6 +103,7 @@ const syncToUrl = debounce((state: AppState) => {
 
 interface AppStore extends AppState {
   updateState: (updates: Partial<AppState>) => void;
+  setInvestmentStrategy: (strategy: 'cashflow' | 'valueadd' | 'appreciation') => void;
   resetState: () => void;
 }
 
@@ -87,6 +112,22 @@ export const useAppStore = create<AppStore>((set) => ({
   updateState: (updates) => {
     set((state) => {
       const newState = { ...state, ...updates };
+      syncToUrl(newState);
+      return newState;
+    });
+  },
+  setInvestmentStrategy: (strategy) => {
+    set((state) => {
+      let targets = {};
+      if (strategy === 'cashflow') {
+        targets = { targetMinCashFlow: 200, targetMinCocRoi: 0.08, targetMinForcedEquity: 0 };
+      } else if (strategy === 'valueadd') {
+        targets = { targetMinCashFlow: 0, targetMinCocRoi: 0, targetMinForcedEquity: 20000 };
+      } else if (strategy === 'appreciation') {
+        targets = { targetMinCashFlow: -100, targetMinCocRoi: 0, targetMinForcedEquity: 0 };
+      }
+      
+      const newState = { ...state, strategy, ...targets };
       syncToUrl(newState);
       return newState;
     });

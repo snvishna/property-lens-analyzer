@@ -19,10 +19,25 @@ export interface AppState {
   useLiveApis: boolean;
 
   // Purchase & Rehab
+  // Property Profile
+  bedrooms: number;
+  bathrooms: number;
+  squareFeet: number;
+  yearBuilt: number;
+
   purchasePrice: number;
-  rehabCosts: number;
+  arv: number;
   closingCosts: number;
-  arv: number; // After Repair Value
+  
+  // Target Metrics
+  targetMinCashFlow: number;
+  targetMinCocRoi: number;
+  targetMinForcedEquity: number;
+  
+  // Rehab
+  rehabCosts: number;
+  useItemizedRehab: boolean;
+  itemizedRehab: { id: string; name: string; cost: number }[];
 
   // Debt Structuring
   loanType: LoanType;
@@ -40,6 +55,15 @@ export interface AppState {
   propertyTaxesMonthly: number;
   insuranceMonthly: number;
   hoaMonthly: number;
+  
+  // Utilities
+  useItemizedUtilities: boolean;
+  utilitiesMonthly: number;
+  waterSewerMonthly: number;
+  garbageMonthly: number;
+  gasMonthly: number;
+  electricMonthly: number;
+  
   otherExpensesMonthly: number;
   vacancyPct: number;
   maintenancePct: number;

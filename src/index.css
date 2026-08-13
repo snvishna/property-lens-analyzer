@@ -5,11 +5,11 @@
 
 @layer base {
   :root {
-    --strategy-cashflow: #1565C0;
-    --strategy-valueadd: #2E7D32;
-    --strategy-appreciation: #6A1B9A;
+    --strategy-cashflow: #3b82f6; /* bg-blue-500 */
+    --strategy-valueadd: #10b981; /* bg-emerald-500 */
+    --strategy-appreciation: #8b5cf6; /* bg-violet-500 */
     --strategy-color: var(--strategy-cashflow);
-    --strategy-color-alpha: rgba(21, 101, 192, 0.1);
+    --strategy-color-alpha: rgba(59, 130, 246, 0.15); /* bg-blue-500/15 */
   }
   
   html { 

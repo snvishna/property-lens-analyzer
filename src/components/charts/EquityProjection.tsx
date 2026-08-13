@@ -1,6 +1,7 @@
 import { useFinanceData } from "../../store/selectors"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { Accordion } from "../ui/Accordion"
+import { TooltipIcon } from "../ui/TooltipIcon"
 
 function formatCurrency(val: number) {
   if (Math.abs(val) >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
@@ -12,7 +13,15 @@ export function EquityProjection() {
   const data = useFinanceData()
 
   return (
-    <Accordion title="Equity Buildup Over Time" open={false}>
+    <Accordion 
+      title={
+        <div className="flex items-center gap-2">
+          Equity Buildup Over Time
+          <TooltipIcon content="Visualizes your loan balance decreasing (principal paydown) and property equity increasing over the holding period." />
+        </div>
+      } 
+      open={false}
+    >
       <div className="h-80 w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data.annualData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>

@@ -12,3 +12,11 @@ export function debounce<T extends (...args: any[]) => any>(fn: T, ms = 300) {
     timeoutId = setTimeout(() => fn.apply(this, args), ms);
   } as T;
 }
+
+export function formatCurrency(val: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+}
+
+export function formatPercent(val: number) {
+  return new Intl.NumberFormat('en-US', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+}

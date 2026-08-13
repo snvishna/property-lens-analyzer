@@ -4,6 +4,7 @@ import { ScenarioManager, type SavedScenario } from '../../lib/scenarioManager';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
+import { TooltipIcon } from '../ui/TooltipIcon';
 import { X, Download, Trash2, FolderOpen } from 'lucide-react';
 
 interface ScenariosModalProps {
@@ -118,14 +119,18 @@ export function ScenariosModal({ isOpen, onClose }: ScenariosModalProps) {
         </div>
 
         <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center text-sm">
-          <span className="text-slate-500">Need a backup?</span>
-          <button 
-            onClick={() => ScenarioManager.exportToCsv()}
-            className="text-blue-600 font-medium flex items-center hover:underline"
-          >
-            <Download className="w-4 h-4 mr-1" />
-            Export to CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              Backup <TooltipIcon content="Export/Import all your scenarios as a JSON file backup" /> : 
+            </span>
+            <button 
+              onClick={() => ScenarioManager.exportToCsv()}
+              className="text-blue-600 font-medium flex items-center hover:underline"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Export to CSV
+            </button>
+          </div>
         </div>
       </div>
     </div>

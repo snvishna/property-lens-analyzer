@@ -47,38 +47,34 @@ export const ScenarioManager = {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scenarios));
   },
 
-  exportToCsv() {
+  exportToJson() {
     const scenarios = this.getAll();
     if (scenarios.length === 0) return;
-
-    // Build headers from first scenario
-    const headers = ['Scenario Name', 'Date Saved', ...Object.keys(scenarios[0].data)];
-    
-    const csvRows = scenarios.map(s => {
-      const row = [
-        `"${s.name}"`,
-        `"${new Date(s.timestamp).toLocaleDateString()}"`
-      ];
-      Object.values(s.data).forEach(val => {
-        let strVal = "";
-        if (typeof val === 'object') {
-          strVal = JSON.stringify(val).replace(/"/g, '""');
-        } else {
-          strVal = String(val).replace(/"/g, '""');
-        }
-        row.push(`"${strVal}"`);
-      });
-      return row.join(',');
-    });
-
-    const csvString = [headers.join(','), ...csvRows].join('\r\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([JSON.stringify(scenarios, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "property_lens_scenarios.csv");
+    link.setAttribute("download", "property_lens_backup.json");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  },
+
+  importFromJson(jsonString: string): boolean {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (Array.isArray(parsed)) {
+        const existing = this.getAll();
+        const merged = [...existing, ...parsed];
+        // simple dedupe by id
+        const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(unique));
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.error("Failed to parse JSON backup", e);
+      return false;
+    }
   }
 };

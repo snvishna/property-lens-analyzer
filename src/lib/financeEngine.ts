@@ -113,9 +113,13 @@ function getMonthlyLoanPayment(
 export function calculateProjections(state: AppState): ProjectionResult {
   const months = state.holdPeriodYears * 12;
   
+  const rehabCosts = state.useItemizedRehab 
+    ? state.itemizedRehab.reduce((acc, item) => acc + item.cost, 0)
+    : state.rehabCosts;
+
   // Initial Capital
   const loanAmount = state.purchasePrice * (1 - state.downPaymentPct);
-  const initialCashNeeded = (state.purchasePrice * state.downPaymentPct) + state.rehabCosts + state.closingCosts;
+  const initialCashNeeded = (state.purchasePrice * state.downPaymentPct) + rehabCosts + state.closingCosts;
   
   let currentLoanBal = loanAmount;
   let currentPropertyValue = state.arv || state.purchasePrice; // If ARV is 0, use PP
@@ -125,7 +129,7 @@ export function calculateProjections(state: AppState): ProjectionResult {
   
   // Determine useful life for depreciation (Residential = 27.5 years)
   const usefulLifeYears = 27.5;
-  const depreciableBasis = state.purchasePrice * (1 - state.landValuePct) + state.rehabCosts;
+  const depreciableBasis = state.purchasePrice * (1 - state.landValuePct) + rehabCosts;
   const annualDepreciation = depreciableBasis / usefulLifeYears;
 
   const annualData: AnnualCashFlow[] = [];
@@ -155,7 +159,17 @@ export function calculateProjections(state: AppState): ProjectionResult {
     const monthlyVacancy = monthlyGPR * state.vacancyPct;
     
     // Expenses
-    const fixedMonthlyOpEx = (state.propertyTaxesMonthly + state.insuranceMonthly + state.hoaMonthly + state.otherExpensesMonthly) * expGrowthFactor;
+    const utilitiesCost = state.useItemizedUtilities
+      ? (state.waterSewerMonthly + state.garbageMonthly + state.gasMonthly + state.electricMonthly)
+      : state.utilitiesMonthly;
+      
+    const fixedMonthlyOpEx = (
+      state.propertyTaxesMonthly + 
+      state.insuranceMonthly + 
+      state.hoaMonthly + 
+      utilitiesCost +
+      state.otherExpensesMonthly
+    ) * expGrowthFactor;
     const varMonthlyOpEx = monthlyGPR * (state.maintenancePct + state.managementPct);
     const monthlyOpEx = fixedMonthlyOpEx + varMonthlyOpEx;
     
@@ -256,7 +270,7 @@ export function calculateProjections(state: AppState): ProjectionResult {
         saleProceedsPreTax = salePrice - closingCostsAtSale - currentLoanBal;
         
         // Taxes at sale
-        const adjustedBasis = state.purchasePrice + state.rehabCosts - cumulativeDepreciation;
+        const adjustedBasis = state.purchasePrice + rehabCosts - cumulativeDepreciation;
         const totalGain = salePrice - closingCostsAtSale - adjustedBasis;
         
         // Gain is split into depreciation recapture and capital gains

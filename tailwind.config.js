@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         strategy: {
-          cashflow: '#1565C0',
-          valueadd: '#2E7D32',
-          appreciation: '#6A1B9A',
+          cashflow: '#3b82f6',
+          valueadd: '#10b981',
+          appreciation: '#8b5cf6',
           DEFAULT: 'var(--strategy-color)',
           alpha: 'var(--strategy-color-alpha)',
         }

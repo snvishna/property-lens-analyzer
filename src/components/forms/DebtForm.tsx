@@ -40,9 +40,9 @@ export function DebtForm() {
         <Input 
           id="downPaymentPct" 
           type="number" 
-          step="0.01"
-          value={store.downPaymentPct || ''} 
-          onChange={e => store.updateState({ downPaymentPct: Number(e.target.value) })}
+          step="0.1"
+          value={store.downPaymentPct * 100 || ''} 
+          onChange={e => store.updateState({ downPaymentPct: Number(e.target.value) / 100 })}
         />
       </FormGroup>
 
@@ -55,7 +55,7 @@ export function DebtForm() {
         <Input 
           id="interestRate" 
           type="number" 
-          step="0.001"
+          step="0.1"
           value={store.interestRate * 100 || ''} 
           onChange={e => store.updateState({ interestRate: Number(e.target.value) / 100 })}
         />
@@ -70,7 +70,7 @@ export function DebtForm() {
           <Input 
             id="adjustedInterestRate" 
             type="number" 
-            step="0.001"
+            step="0.1"
             value={store.adjustedInterestRate * 100 || ''} 
             onChange={e => store.updateState({ adjustedInterestRate: Number(e.target.value) / 100 })}
           />
