@@ -19,9 +19,9 @@ export function DebtAmortization() {
   // We want to plot Loan Balance vs Equity up to Year 10 (or whatever hold period is)
   const chartData = data.annualData.map(d => ({
     year: `Year ${d.year}`,
-    loanBalance: d.endBalance,
-    equity: d.propertyValue - d.endBalance,
-    propertyValue: d.propertyValue
+    loanBalance: d.endOfYearLoanBal,
+    equity: d.endOfYearEquity,
+    propertyValue: d.endOfYearPropertyVal
   }));
 
   return (
