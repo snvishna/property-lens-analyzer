@@ -128,9 +128,44 @@ export interface AnnualCashFlow {
   saleProceedsAfterTax?: number;
 }
 
+export interface MonthlyCashFlow {
+  month: number;
+  grossScheduledRent: number;
+  otherIncome: number;
+  vacancyLoss: number;
+  effectiveGrossIncome: number;
+  propTaxes: number;
+  insurance: number;
+  repairs: number;
+  management: number;
+  hoa: number;
+  otherFixedExpenses: number;
+  totalOpEx: number;
+  noi: number;
+  debtService: number;
+  capEx: number;
+  cashFlowBeforeTax: number;
+  taxImpact: number;
+  cashFlowAfterTax: number;
+  propertyValue: number;
+  endingLoanBalance: number;
+  totalEquity: number;
+  cumulativeAfterTaxCF: number;
+  dscr: number;
+  roe: number;
+}
+
+export interface AmortizationRow {
+  month: number;
+  principal: number;
+  interest: number;
+  endingBalance: number;
+}
+
 export interface ProjectionResult {
-  monthlyData: any[]; // Kept for detailed table export if needed
+  monthlyData: MonthlyCashFlow[];
   annualData: AnnualCashFlow[];
+  amortizationSchedule: AmortizationRow[];
   
   // Headline Metrics
   initialCashNeeded: number;

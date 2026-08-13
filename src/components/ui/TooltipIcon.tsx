@@ -7,18 +7,18 @@ export function TooltipIcon({ content }: { content: string }) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const iconRef = useRef<HTMLDivElement>(null);
 
-  const updatePosition = () => {
-    if (iconRef.current && isOpen) {
-      const rect = iconRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.top,
-        left: rect.left + rect.width / 2,
-      });
-    }
-  };
-
   useEffect(() => {
     if (isOpen) {
+      const updatePosition = () => {
+        if (iconRef.current) {
+          const rect = iconRef.current.getBoundingClientRect();
+          setCoords({
+            top: rect.top,
+            left: rect.left + rect.width / 2,
+          });
+        }
+      };
+
       updatePosition();
       // Listen to scroll events on any scrolling container
       window.addEventListener('scroll', updatePosition, true);

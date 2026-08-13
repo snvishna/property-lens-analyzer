@@ -14,6 +14,8 @@ export function calculatePmt(ratePerPeriod: number, numPeriods: number, presentV
  * Calculates the Internal Rate of Return (IRR) using the Newton-Raphson method.
  */
 export function calculateIRR(cashFlows: number[], guess: number = 0.1): number {
+  if (cashFlows.every(cf => cf === 0)) return 0;
+  
   const maxTries = 1000;
   const tolerance = 1e-7;
   let rate = guess;
@@ -62,6 +64,29 @@ export function calculateMIRR(cashFlows: number[], financeRate: number, reinvest
   
   const mirr = Math.pow(positiveCashFlowsFv / Math.abs(negativeCashFlowsPv), 1 / n) - 1;
   return isNaN(mirr) ? 0 : mirr;
+}
+
+export function calculateSp500EquivalentReturn(holdPeriod: number, initialInvestment: number, capitalGainsTaxRate: number, expectedReturn: number) {
+  if (initialInvestment <= 0 || holdPeriod <= 0) return { finalValue: 0, totalProfit: 0, annualizedReturn: 0 };
+  
+  const annualReturnDecimal = expectedReturn / 100;
+  const finalValue = initialInvestment * Math.pow(1 + annualReturnDecimal, holdPeriod);
+
+  const preTaxProfit = finalValue - initialInvestment;
+  const taxOnProfit = preTaxProfit > 0 ? preTaxProfit * (capitalGainsTaxRate / 100) : 0;
+  const afterTaxProfit = preTaxProfit - taxOnProfit;
+
+  const afterTaxFinalValue = initialInvestment + afterTaxProfit;
+  const afterTaxTotalRoi = afterTaxProfit / initialInvestment;
+  const annualizedReturn = afterTaxTotalRoi > -1 ? Math.pow(1 + afterTaxTotalRoi, 1 / holdPeriod) - 1 : -1;
+  
+  return { finalValue: afterTaxFinalValue, totalProfit: afterTaxProfit, annualizedReturn };
+}
+
+export function calculateMoIC(cashFlows: number[]): number {
+  const totalPositiveReturns = cashFlows.reduce((acc, val) => val > 0 ? acc + val : acc, 0);
+  const totalNegativeInvestments = cashFlows.reduce((acc, val) => val < 0 ? acc + Math.abs(val) : acc, 0);
+  return totalNegativeInvestments > 0 ? totalPositiveReturns / totalNegativeInvestments : 0;
 }
 
 /**
@@ -133,10 +158,13 @@ export function calculateProjections(state: AppState): ProjectionResult {
   const annualDepreciation = depreciableBasis / usefulLifeYears;
 
   const annualData: AnnualCashFlow[] = [];
+  const monthlyData: any[] = [];
+  const amortizationSchedule: any[] = [];
   
   // Trackers
   let cumulativeDepreciation = 0;
   let totalCashInvested = initialCashNeeded;
+  let cumulativeAfterTaxCF = 0;
   const preTaxCashFlows: number[] = [-initialCashNeeded];
   const afterTaxCashFlows: number[] = [-initialCashNeeded];
   
@@ -155,7 +183,9 @@ export function calculateProjections(state: AppState): ProjectionResult {
     const expGrowthFactor = Math.pow(1 + state.annualExpenseGrowthPct, yearIndex - 1);
     
     // Income
-    const monthlyGPR = (state.grossMonthlyRent + state.otherMonthlyIncome) * Math.pow(1 + state.annualRentGrowthPct, yearIndex - 1);
+    const baseGPR = state.grossMonthlyRent * Math.pow(1 + state.annualRentGrowthPct, yearIndex - 1);
+    const baseOther = state.otherMonthlyIncome * Math.pow(1 + state.annualRentGrowthPct, yearIndex - 1);
+    const monthlyGPR = baseGPR + baseOther;
     const monthlyVacancy = monthlyGPR * state.vacancyPct;
     
     // Expenses
@@ -163,14 +193,15 @@ export function calculateProjections(state: AppState): ProjectionResult {
       ? (state.waterSewerMonthly + state.garbageMonthly + state.gasMonthly + state.electricMonthly)
       : state.utilitiesMonthly;
       
-    const fixedMonthlyOpEx = (
-      state.propertyTaxesMonthly + 
-      state.insuranceMonthly + 
-      state.hoaMonthly + 
-      utilitiesCost +
-      state.otherExpensesMonthly
-    ) * expGrowthFactor;
-    const varMonthlyOpEx = monthlyGPR * (state.maintenancePct + state.managementPct);
+    const propTaxes = state.propertyTaxesMonthly * expGrowthFactor;
+    const insurance = state.insuranceMonthly * expGrowthFactor;
+    const hoa = state.hoaMonthly * expGrowthFactor;
+    const otherFixed = (utilitiesCost + state.otherExpensesMonthly) * expGrowthFactor;
+      
+    const fixedMonthlyOpEx = propTaxes + insurance + hoa + otherFixed;
+    const repairs = monthlyGPR * state.maintenancePct;
+    const management = monthlyGPR * state.managementPct;
+    const varMonthlyOpEx = repairs + management;
     const monthlyOpEx = fixedMonthlyOpEx + varMonthlyOpEx;
     
     // monthlyNOI calculation omitted since it's not strictly needed monthly, only annually
@@ -210,7 +241,6 @@ export function calculateProjections(state: AppState): ProjectionResult {
       }
     }
     
-    // Debt Service
     const { interest, principal } = getMonthlyLoanPayment(
       isRefiMonth ? 1 : m, // Reset month to 1 if we just refi'd
       currentLoanBal, 
@@ -223,6 +253,57 @@ export function calculateProjections(state: AppState): ProjectionResult {
     
     currentLoanBal -= principal;
     if (currentLoanBal < 0) currentLoanBal = 0;
+    
+    amortizationSchedule.push({
+      month: m,
+      principal,
+      interest,
+      endingBalance: currentLoanBal
+    });
+    
+    // Property Value appreciation (monthly compounded for the tracking)
+    // Wait, original calculates property value annually. We'll interpolate monthly or just step it.
+    const monthPropertyValue = currentPropertyValue * Math.pow((1 + state.annualAppreciationPct), (m % 12 === 0 ? 1 : (m % 12) / 12));
+    
+    const monthNOI = monthlyGPR - monthlyVacancy - monthlyOpEx;
+    const monthPreTaxCF = monthNOI - (interest + principal) - monthlyCapEx;
+    
+    // Monthly Tax estimation
+    const monthDepreciation = annualDepreciation / 12;
+    const monthTaxableIncome = monthNOI - interest - monthDepreciation;
+    const monthTaxImpact = monthTaxableIncome * state.marginalTaxRate;
+    const monthAfterTaxCF = monthPreTaxCF - monthTaxImpact;
+    
+    cumulativeAfterTaxCF += monthAfterTaxCF;
+    
+    const monthEquity = monthPropertyValue - currentLoanBal;
+    
+    monthlyData.push({
+      month: m,
+      grossScheduledRent: baseGPR,
+      otherIncome: baseOther,
+      vacancyLoss: monthlyVacancy,
+      effectiveGrossIncome: monthlyGPR - monthlyVacancy,
+      propTaxes,
+      insurance,
+      repairs,
+      management,
+      hoa,
+      otherFixedExpenses: otherFixed,
+      totalOpEx: monthlyOpEx,
+      noi: monthNOI,
+      debtService: interest + principal,
+      capEx: monthlyCapEx,
+      cashFlowBeforeTax: monthPreTaxCF,
+      taxImpact: monthTaxImpact,
+      cashFlowAfterTax: monthAfterTaxCF,
+      propertyValue: monthPropertyValue,
+      endingLoanBalance: currentLoanBal,
+      totalEquity: monthEquity,
+      cumulativeAfterTaxCF: cumulativeAfterTaxCF,
+      dscr: (interest + principal) > 0 ? (monthNOI / (interest + principal)) : 0,
+      roe: monthEquity > 0 ? (monthAfterTaxCF * 12 / monthEquity) : 0,
+    });
     
     // Accumulate for the year
     yearGPR += monthlyGPR;
@@ -340,8 +421,9 @@ export function calculateProjections(state: AppState): ProjectionResult {
   const leveredYieldAvg = annualData.reduce((acc, yr) => acc + yr.cashOnCashReturn, 0) / state.holdPeriodYears;
 
   return {
-    monthlyData: [], // Omitted for brevity, but easily added if needed for export
+    monthlyData,
     annualData,
+    amortizationSchedule,
     initialCashNeeded,
     totalCashInvested,
     irrPreTax,
